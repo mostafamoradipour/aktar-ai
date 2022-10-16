@@ -1,0 +1,36 @@
+response_code:
+  ok: 200
+  bad_request: 400
+
+cam:
+  mongodb:
+    host: 0.0.0.0
+    port: 27017
+    database: Aktar
+    collection: CAM
+
+cdm:
+  thresh: 0.7
+
+  detection:
+    device: 'gpu'
+    img_size: 640
+    conf_thres: 0.5
+    iou_thres: 0.4
+    weights: 'cdm/verification/detection/weights/yolov5n-face.onnx'
+
+  extraction:
+    device: 'gpu'
+    weights: 'cdm/verification/extraction/weights/webface_r50.onnx'
+    # weights: 'cdm/verification/extraction/weights/w600k_mbf.onnx'
+
+  mongodb:
+    host: 0.0.0.0
+    port: 27017
+    database: Aktar
+    collection: CDM10
+
+  test:
+    img: cdm/verification/database/test_images/0381_0.jpg
+    video: video.mp4
+    url: rtsp://192.168.1.101:554/user=admin&password=&channel=2&stream=1.sdp?real_stream--rtp-caching=800
