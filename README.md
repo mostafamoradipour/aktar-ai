@@ -1,8 +1,8 @@
-# Aktar-Search
+# Aktar
 
 In this software, using GStreamer technology, streaming from the source, decoding, and scaling are done efficiently. Two main processes of this software, object detection and feature extraction, are performed using TensorRT, which is the best and fastest framework for inferencing on GPU and Jetson devices. To make this happen, about 6 billions of floating point operations are done in just a half of a second on a Jetson Nano device. Finally, after extracting features of this detected objects, searching is done by comparing them with eatch other. Then a threshold tells us if these objects are the same or not.
 
-# How to install Aktar-Search
+# How to install Aktar
 
 <h3>First make a new python environment and name it as you want:</h3>
 
