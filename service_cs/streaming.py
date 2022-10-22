@@ -46,7 +46,7 @@ def resize(image, width=None, height=None, inter=INTER_AREA):
 def Streamer(inputs):
     streamers = []
     stream_urls = [None, None, None, None]
-    for idx, url in enumerate(inputs):
+    for idx, url in enumerate(inputs[:4]):
         stream_urls[idx] = url
         streamers.append(StreamerV1(url))
     while True:
