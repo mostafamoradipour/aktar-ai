@@ -109,7 +109,7 @@ def create_source_bin(index, uri):
     return nbin
 
 
-def streamer(inputs):
+def Streamer(inputs):
     global perf_data
     perf_data = PERF_DATA(len(inputs))
 
@@ -258,4 +258,4 @@ def streamer(inputs):
 if __name__ == '__main__':
     uri = 'rtsp://192.168.1.100:554/user=admin&password=&channel=1&stream=1.sdp?real_stream--rtp-caching=800'
     inputs = [uri, uri, uri, uri]
-    sys.exit(streamer(inputs))
+    sys.exit(Streamer(inputs))

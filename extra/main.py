@@ -5,7 +5,7 @@ from time import time, sleep
 
 
 def show_stream():
-    input_uri = "rtsp://192.168.1.101:554/user=admin&password=&channel=1&stream=1.sdp?real_stream--rtp-caching=800"
+    input_uri = "rtsp://192.168.1.101:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800"
     stream1 = Streamer(input_uri, width=800, height=500)
     stream2 = Streamer(input_uri, width=800, height=500)
     stream3 = Streamer(input_uri, width=800, height=500)

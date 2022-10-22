@@ -1,17 +1,15 @@
-from .verification import FaceVerifier
+from .verification import PersonVerifier
 from .streaming import StreamerV1
-from time import sleep
 
 
 class searchEngine():
     def __init__(self, cfg):
-        self.verifier = FaceVerifier(cfg)
-        self.vid_add = cfg["test"]["url"]
+        self.verifier = PersonVerifier(cfg)
+        self.vid_url = cfg["test"]["url"]
 
     def search(self):
-        vid = StreamerV1(self.vid_add)
+        vid = StreamerV1(self.vid_url)
         while True:
-            sleep(1)
             ret, frame = vid.read_last()
             if ret:
                 self.verifier.verify(frame)
