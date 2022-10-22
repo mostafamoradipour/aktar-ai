@@ -1,5 +1,5 @@
-from .verification import PersonVerifier
-from .streaming import StreamerV1
+from service_ba.verification import PersonVerifier
+from service_cs.streaming import StreamerV1
 
 
 class searchEngine():

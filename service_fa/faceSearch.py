@@ -1,6 +1,5 @@
-from verification import FaceVerifier
-from streaming import StreamerV1
-from time import sleep
+from service_fa.verification import FaceVerifier
+from service_cs.streaming import StreamerV1
 
 
 class searchEngine():
@@ -11,7 +10,6 @@ class searchEngine():
     def search(self):
         vid = StreamerV1(self.vid_add)
         while True:
-            sleep(1)
             ret, frame = vid.read_last()
             if ret:
                 self.verifier.verify(frame)
