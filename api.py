@@ -1,12 +1,15 @@
 from service_ba.personSearch import searchEngine
-from service_cs.ds_streaming import Streamer
+# from service_cs.ds_streaming import Streamer
+from service_cs.streaming import Streamer
 from flask import Flask, request, jsonify
 from service_db.api_db import Database
 from threading import Thread
 from flask_cors import CORS
 from waitress import serve
+import numpy as np
 import argparse
 import yaml
+import cv2
 
 
 with open('config.yaml', 'r') as f:
@@ -100,7 +103,7 @@ def play():
             if play:
                 inputs.append(camera["url"])
         if len(inputs):
-            Streamer(inputs)
+            Streamer(inputs) 
         return {"message": "playing is done"}, response_code["ok"]
     except:
         {"message": "palying failed"}, response_code["bad_request"]
