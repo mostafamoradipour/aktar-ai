@@ -6,10 +6,8 @@ from service_db.api_db import Database
 from threading import Thread
 from flask_cors import CORS
 from waitress import serve
-import numpy as np
 import argparse
 import yaml
-import cv2
 
 
 with open('config.yaml', 'r') as f:
