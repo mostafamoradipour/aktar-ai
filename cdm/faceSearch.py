@@ -1,6 +1,6 @@
 from .verification import FaceVerifier
 from .streaming import StreamerV1
-from time import sleep
+from threading import Thread
 
 
 class searchEngine():
@@ -10,11 +10,19 @@ class searchEngine():
 
     def search(self):
         vid = StreamerV1(self.vid_add)
-        while True:
-            sleep(1)
+        while self.running:
             ret, frame = vid.read_last()
             if ret:
                 self.verifier.verify(frame)
+
+    def start(self):
+        self.trd = Thread(target=self.search)
+        self.running = True
+        self.trd.start()
+
+    def stop(self):
+        self.running = False
+        self.trd.join()
 
 
 if __name__ == "__main__":

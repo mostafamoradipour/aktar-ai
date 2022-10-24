@@ -2,14 +2,13 @@ from flask import Flask, request, jsonify
 from cdm.faceSearch import searchEngine
 from database.api_db import Database
 from cam.streaming import streamer
-from threading import Thread
 from flask_cors import CORS
 from waitress import serve
-from time import sleep
 import websockets
 import argparse
 import asyncio
 import yaml
+import json
 
 
 with open('config.yaml', 'r') as f:
@@ -20,21 +19,28 @@ CORS(app)
 cam_col = Database(cfg["cam"]["mongodb"])
 cdm_col = Database(cfg["cdm"]["mongodb"])
 response_code = cfg["response_code"]
-cdm_engine = searchEngine(cfg["cdm"])
-trd = Thread(target=cdm_engine.search)
-trd.start()
 
 
-async def echo(websocket):
-    for _ in range(0):
-        persons = cdm_col.get_docs() # persons = [{"id": 1, "face": base64}, ...]
-        sleep(1)
-        await websocket.send({"persons": persons})
+async def cdm(websocket):
+    cdm_engine = searchEngine(cfg["cdm"])
+    async for message in websocket:
+        message = json.loads(message)
+        if message["get"]:
+            cameras = cam_col.get_docs()
+            await websocket.send(json.dumps({"cameras": cameras})) 
+        else:
+            cdm_engine.stop()
+            camera = message["cameras"][0]
+            cdm_engine.vid_add = camera["url"]
+            cdm_engine.start()
 
 
-async def main():
-    async with websockets.serve(echo, "localhost", 4444):
+async def cdm_serve():
+    async with websockets.serve(cdm, "localhost", 8765):
         await asyncio.Future()
+
+
+asyncio.run(cdm_serve())
 
 
 @app.route('/')
@@ -54,9 +60,7 @@ def get_cameras():
 @app.route("/cdm", methods=["GET"])
 def update_cdm():
     try:
-        # asyncio.run(main())
-        # return {"message": "Websocket created to update CDM"}, response_code["ok"]
-        persons = cdm_col.get_docs() # persons = [{"id": 1, "face": base64}, ...]
+        persons = cdm_col.get_docs()
         return jsonify({"persons": persons}), response_code["ok"]
     except:
         return {"message": "Failed to load the persons from database"}, response_code["bad_request"]
