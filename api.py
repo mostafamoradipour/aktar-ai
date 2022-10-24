@@ -6,20 +6,43 @@ from service_db.api_db import Database
 from threading import Thread
 from flask_cors import CORS
 from waitress import serve
+import websockets
 import argparse
+import asyncio
 import yaml
+import json
 
 
 with open('config.yaml', 'r') as f:
     cfg = yaml.safe_load(f)
+
 app = Flask(__name__)
 CORS(app)
 cam_col = Database(cfg["cam"]["mongodb"])
 cdm_col = Database(cfg["cdm"]["mongodb"])
 response_code = cfg["response_code"]
-cdm_engine = searchEngine(cfg["cdm"])
-trd = Thread(target=cdm_engine.search)
-# trd.start()
+
+
+async def cdm(websocket):
+    cdm_engine = searchEngine(cfg["cdm"])
+    async for message in websocket:
+        message = json.loads(message)
+        if message["get"]:
+            cameras = cam_col.get_docs()
+            await websocket.send(json.dumps({"cameras": cameras})) 
+        else:
+            cdm_engine.stop()
+            camera = message["cameras"][0]
+            cdm_engine.vid_add = camera["url"]
+            cdm_engine.start()
+
+
+async def cdm_serve():
+    async with websockets.serve(cdm, "localhost", 8765):
+        await asyncio.Future()
+
+
+asyncio.run(cdm_serve())
 
 
 @app.route("/get", methods=["GET"])
