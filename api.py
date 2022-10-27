@@ -3,6 +3,7 @@ from service_ba.personSearch import searchEngine
 from service_cs.streaming import Streamer
 from flask import Flask, request, jsonify
 from service_db.api_db import Database
+from service_db.sync import sync_negar
 from threading import Thread
 from flask_cors import CORS
 from waitress import serve
@@ -16,6 +17,7 @@ import json
 with open('config.yaml', 'r') as f:
     cfg = yaml.safe_load(f)
 
+
 app = Flask(__name__)
 CORS(app)
 cam_col = Database(cfg["cam"]["mongodb"])
@@ -27,22 +29,29 @@ async def cdm(websocket):
     cdm_engine = searchEngine(cfg["cdm"])
     async for message in websocket:
         message = json.loads(message)
-        if message["get"]:
+        command = message["command"]
+        if command == "get":
             cameras = cam_col.get_docs()
             await websocket.send(json.dumps({"cameras": cameras})) 
-        else:
-            cdm_engine.stop()
+        elif command == "start":
             camera = message["cameras"][0]
             cdm_engine.vid_add = camera["url"]
             cdm_engine.start()
+        elif command == "stop":
+            cdm_engine.stop()
 
 
 async def cdm_serve():
-    async with websockets.serve(cdm, "localhost", 8765):
+    async with websockets.serve(cdm, "localhost", 5001):
         await asyncio.Future()
 
 
-asyncio.run(cdm_serve())
+websocket_trd = Thread(target=asyncio.run, args=[cdm_serve()])
+websocket_trd.start()
+
+
+negar_sync_trd = Thread(target=sync_negar, args=[cam_col, cdm_col, cfg["email"]])
+negar_sync_trd.start()
 
 
 @app.route("/get", methods=["GET"])

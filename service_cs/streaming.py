@@ -82,7 +82,7 @@ def Streamer(inputs):
 
 
 class StreamerV1(object):
-    def __init__(self, input_uri, width=None, height=None, max_queue_size=1, frame_skip=0, preprocess=None, GStreamer=True):
+    def __init__(self, input_uri, width=None, height=None, max_queue_size=1, frame_skip=0, preprocess=None, GStreamer=False):
         super(StreamerV1, self).__init__()
 
         self.input_uri = input_uri
