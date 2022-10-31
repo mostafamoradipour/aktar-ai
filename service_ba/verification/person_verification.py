@@ -18,18 +18,23 @@ class PersonVerifier(object):
         # loading face feature extractor modlue
         self.extractor = FeatureExtractor(cfg['extraction'])
         self.database = Database(cfg["mongodb"])
-        self.features = self.database.load_feature()
+        # self.features = self.database.load_feature()
+        self.ids, self.areas, self.features, self.id_counter =self.database.load_feature()
         self.counter = 0
 
     def query_feature(self, norm_feat):
         find_face = False
+        query_id = 'unknown'
         max_conf = 0
         if len(self.features) > 0 :
-            max_conf = (1 + (self.features @ norm_feat.T)).max() / 2
+            conf = (1 + (self.features @ norm_feat.T)).reshape(-1)
+            max_conf = conf.max() / 2
+            arg_max = np.argmax(conf)
         if max_conf >= self.thresh:
             find_face = True
+            query_id = self.ids[arg_max]
         
-        return find_face
+        return find_face, query_id
 
 
     
@@ -70,7 +75,9 @@ class PersonVerifier(object):
             for body in person:
                 feat = self.extractor.extract_one(body)
                 norm_feat = feat / norm(feat, axis=1)
-                find_person = self.query_feature(norm_feat)
+                find_person, query_id = self.query_feature(norm_feat)
+
+                area = body.shape[1] * body.shape[0]
 
                 if not find_person:
                     new_feat  = np.expand_dims(norm_feat, 0)
@@ -79,4 +86,13 @@ class PersonVerifier(object):
                         self.features = new_feat
                     else:
                         self.features =  np.vstack((self.features, new_feat))
-                    self.database.save_feature(body, norm_feat)
+                    self.id_counter += 1
+                    self.database.save_feature(body, norm_feat, area = area, id = self.id_counter)
+
+
+                elif query_id != 'unknown':
+                    if area >= self.areas[query_id]:
+                        self.areas[query_id] = area
+                        self.features[query_id] = norm_feat
+                        self.database.update_feature(body, norm_feat, area = area, id = query_id)
+                    
