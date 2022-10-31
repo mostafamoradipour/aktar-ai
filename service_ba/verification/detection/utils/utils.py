@@ -2,6 +2,28 @@ from numpy import argsort, mod
 import cv2
 
 
+def ignore_boxes(boxes, img_shape, ltbr = [30, 10, 20, 10], min_area = 1000, min_ratio = 1.4, max_ratio = 4):
+    ### Filter by margin
+    w, h = img_shape
+    x1_y1_min = (boxes[0][:, :2] < torch.Tensor([ltbr[0], ltbr[1]]))
+    x2_y2_max = (boxes[0][:, 2:4] > torch.Tensor([h - ltbr[2], w - ltbr[2]]))
+
+    margin_indexes = x1_y1_min.sum(axis=1) + x2_y2_max.sum(axis=1)
+    margin_indexes = margin_indexes < 1
+
+    ### Filter by aspect ratio and area 
+    good_area_indexes = (boxes[0][:,3] - boxes[0][:,1]) * (boxes[0][:,2] - boxes[0][:,0])> min_area
+    
+    aspect_ratio = (boxes[0][:,3] - boxes[0][:,1]) / (boxes[0][:,2] - boxes[0][:,0])
+    good_ratio_indexes = torch.logical_and((aspect_ratio <max_ratio) , (aspect_ratio > min_ratio))
+    
+    ratio_area_indexes = torch.logical_and(good_ratio_indexes, good_area_indexes)
+    indexes = torch.logical_and(ratio_area_indexes, margin_indexes)
+    
+    return   [boxes[0][indexes]] #boxes[indexes]
+
+
+
 def get_box(img, xywh):
     h,w,c = img.shape
     x1 = int(xywh[0] * w - 0.5 * xywh[2] * w)
