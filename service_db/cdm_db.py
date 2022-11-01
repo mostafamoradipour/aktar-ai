@@ -2,7 +2,7 @@ from pymongo import MongoClient
 import numpy as np
 import base64
 import cv2
-
+from queue import Queue
 
 class Database():
     def __init__(self, cfg):
@@ -10,22 +10,26 @@ class Database():
         port = int(cfg['port'])
         client = MongoClient(host, port)
         self.collection = client[cfg['database']][cfg['collection']]
+        self.queue_size = cfg['queue_maxsize']
 
     def load_feature(self):
-        samples = []
+        samples = dict()
         ids = []
         areas = []
         documents = self.collection.find()
         id_counter = 0
         try:
             for index, doc in enumerate(documents):
-                samples.append(np.array(doc['feature']))
+                # samples.append(np.array(doc['feature']))
+                q = Queue(maxsize = self.queue_size)
+                q.put((np.array(doc['feature'])))
+                samples[index] = q
                 ids.append(np.array(doc['id']))
                 areas.append(np.array(doc['area']))
 
             ids = np.array(ids)
             areas = np.array(areas) 
-            samples = np.array(samples) 
+            # samples = np.array(samples) 
 
             id_counter = max([i['id'] for i in self.collection.find()])      
         except:

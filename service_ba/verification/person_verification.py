@@ -21,20 +21,41 @@ class PersonVerifier(object):
         # self.features = self.database.load_feature()
         self.ids, self.areas, self.features, self.id_counter =self.database.load_feature()
         self.counter = 0
+    
+    def get_confidence(self, queue_features, norm_feat):
+        '''
+            geting max confidence for a peron's queue 
+        '''
+        queue_size = queue_features.qsize()
+        features = [queue_features.queue[i] for i in range(queue_size)]
+        features = np.array(features)
+        confs = (1 + (features @ norm_feat)).reshape(-1)
+        
+        return confs.max() 
+
+
 
     def query_feature(self, norm_feat):
         find_face = False
         query_id = 'unknown'
         max_conf = 0
-        if len(self.features) > 0 :
-            conf = (1 + (self.features @ norm_feat.T)).reshape(-1)
+        if len(self.features) > 0:
+            conf = []
+            for queue_features_key  in self.features:
+                person_conf = self.get_confidence(self.features[queue_features_key], norm_feat.T)
+                conf.append(person_conf)
+
+            # conf = (1 + (self.features @ norm_feat.T)).reshape(-1)
+            conf = np.array(conf)
             max_conf = conf.max() / 2
             arg_max = np.argmax(conf)
         if max_conf >= self.thresh:
             find_face = True
             query_id = self.ids[arg_max]
+
+        num_queue = arg_max
         
-        return find_face, query_id
+        return find_face, query_id, num_queue
 
 
     
@@ -75,7 +96,7 @@ class PersonVerifier(object):
             for body in person:
                 feat = self.extractor.extract_one(body)
                 norm_feat = feat / norm(feat, axis=1)
-                find_person, query_id = self.query_feature(norm_feat)
+                find_person, query_id, num_queue = self.query_feature(norm_feat)
 
                 area = body.shape[1] * body.shape[0]
 
@@ -91,8 +112,9 @@ class PersonVerifier(object):
 
 
                 elif query_id != 'unknown':
+                    self.features[num_queue].put(norm_feat)
+
                     if area >= self.areas[query_id]:
                         self.areas[query_id] = area
-                        self.features[query_id] = norm_feat
                         self.database.update_feature(body, norm_feat, area = area, id = query_id)
                     
