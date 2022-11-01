@@ -3,6 +3,7 @@ import numpy as np
 from .extraction import FeatureExtractor
 from .detection import PersonDetector
 from service_db.cdm_db import Database
+from queue import Queue
 
 
 class PersonVerifier(object):
@@ -18,9 +19,9 @@ class PersonVerifier(object):
         # loading face feature extractor modlue
         self.extractor = FeatureExtractor(cfg['extraction'])
         self.database = Database(cfg["mongodb"])
-        # self.features = self.database.load_feature()
         self.ids, self.areas, self.features, self.id_counter =self.database.load_feature()
         self.counter = 0
+        self.frame_number = 0
     
     def get_confidence(self, queue_features, norm_feat):
         '''
@@ -39,6 +40,7 @@ class PersonVerifier(object):
         find_face = False
         query_id = 'unknown'
         max_conf = 0
+        arg_max = None
         if len(self.features) > 0:
             conf = []
             for queue_features_key  in self.features:
@@ -102,13 +104,13 @@ class PersonVerifier(object):
 
                 if not find_person:
                     new_feat  = np.expand_dims(norm_feat, 0)
-
-                    if self.features.shape[0] == 0:
-                        self.features = new_feat
-                    else:
-                        self.features =  np.vstack((self.features, new_feat))
-                    self.id_counter += 1
+                    q = Queue(maxsize = self.database.queue_size)
+                    q.put(norm_feat)
+                    self.features[self.id_counter] = q
+                    self.ids.append(self.id_counter)
+                    self.areas.append(area)
                     self.database.save_feature(body, norm_feat, area = area, id = self.id_counter)
+                    self.id_counter += 1
 
 
                 elif query_id != 'unknown':

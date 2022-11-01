@@ -24,14 +24,14 @@ class Database():
                 q = Queue(maxsize = self.queue_size)
                 q.put((np.array(doc['feature'])))
                 samples[index] = q
-                ids.append(np.array(doc['id']))
-                areas.append(np.array(doc['area']))
+                ids.append(doc['id'])
+                areas.append(doc['area'])
 
-            ids = np.array(ids)
-            areas = np.array(areas) 
+            # ids = np.array(ids)
+            # areas = np.array(areas) 
             # samples = np.array(samples) 
 
-            id_counter = max([i['id'] for i in self.collection.find()])      
+            id_counter = max([i['id'] for i in self.collection.find()]) + 1    
         except:
             pass
         return ids, areas, samples, id_counter
