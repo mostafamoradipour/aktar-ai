@@ -8,6 +8,7 @@ class searchEngine():
         self.verifier = PersonVerifier(cfg)
         self.vid_add = None
         self.running = False
+        self.frame = 0
 
     def search(self):
         vid = StreamerV1(self.vid_add)

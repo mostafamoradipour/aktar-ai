@@ -21,13 +21,13 @@ class PersonVerifier(object):
         self.database = Database(cfg["mongodb"])
         self.ids, self.areas, self.features, self.id_counter =self.database.load_feature()
         self.counter = 0
-        self.frame_number = 0
     
     def get_confidence(self, queue_features, norm_feat):
         '''
             geting max confidence for a peron's queue 
         '''
         queue_size = queue_features.qsize()
+        print(f"Query size : {queue_size}")
         features = [queue_features.queue[i] for i in range(queue_size)]
         features = np.array(features)
         confs = (1 + (features @ norm_feat)).reshape(-1)
@@ -103,6 +103,7 @@ class PersonVerifier(object):
                 area = body.shape[1] * body.shape[0]
 
                 if not find_person:
+                    print(f"Find a new person[{query_id}]")
                     new_feat  = np.expand_dims(norm_feat, 0)
                     q = Queue(maxsize = self.database.queue_size)
                     q.put(norm_feat)
@@ -114,9 +115,14 @@ class PersonVerifier(object):
 
 
                 elif query_id != 'unknown':
+                    print(f"Find a detected person[{query_id}]")
+                    if self.features[num_queue].qsize() == self.database.queue_size:
+                        self.features[num_queue].get()
+
                     self.features[num_queue].put(norm_feat)
 
-                    if area >= self.areas[query_id]:
-                        self.areas[query_id] = area
+                    if area > self.areas[num_queue]:
+                        print(f"Update person[{query_id}]")
+                        self.areas[num_queue] = area
                         self.database.update_feature(body, norm_feat, area = area, id = query_id)
                     
