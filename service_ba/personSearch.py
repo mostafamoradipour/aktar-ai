@@ -6,16 +6,20 @@ from threading import Thread
 class searchEngine():
     def __init__(self, cfg):
         self.verifier = PersonVerifier(cfg)
-        self.vid_add = None
+        self.cam_urls = []
         self.running = False
 
     def search(self):
-        vid = StreamerV1(self.vid_add)
+        vids = []
+        for cam_url in self.cam_urls:
+            vids.append(StreamerV1(cam_url))
         while self.running:
-            ret, frame = vid.read_last()
-            if ret:
-                self.verifier.verify(frame)
-        vid.release()
+            for vid in vids:
+                ret, frame = vid.read_last()
+                if ret:
+                    self.verifier.verify(frame)
+        for vid in vids:
+            vid.release()
 
     def start(self):
         if self.running:

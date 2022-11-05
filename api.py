@@ -34,8 +34,8 @@ async def cdm(websocket):
             cameras = cam_col.get_docs()
             await websocket.send(json.dumps({"cameras": cameras})) 
         elif command == "start":
-            camera = message["cameras"][0]
-            cdm_engine.vid_add = camera["url"]
+            for camera in message["cameras"]:
+                cdm_engine.cam_urls.append(camera["url"])
             cdm_engine.start()
         elif command == "stop":
             cdm_engine.stop()
