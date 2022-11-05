@@ -31,4 +31,4 @@ cdm:
     host: 0.0.0.0
     port: 27017
     database: Aktar
-    collection: CDM_0_2_0_Test2
+    collection: CDM-Nov4-1638

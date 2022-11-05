@@ -1,9 +1,4 @@
-from service_ba.personSearch import searchEngine
-# from service_cs.ds_streaming import Streamer
-from service_cs.streaming import Streamer
 from flask import Flask, request, jsonify
-from service_db.api_db import Database
-from service_db.sync import sync_negar
 from threading import Thread
 from flask_cors import CORS
 from waitress import serve
@@ -12,6 +7,11 @@ import argparse
 import asyncio
 import yaml
 import json
+
+from service_ba.personSearch import searchEngine
+from service_cs.streamer import Streamer
+from service_db.api_db import Database
+from service_db.sync import sync_negar
 
 
 with open('config.yaml', 'r') as f:
