@@ -13,7 +13,7 @@ def sync_negar(cam_col, cdm_col, email):
         for camera in cameras:
             del camera["play"]
             ip = requests.get('https://api.ipify.org').text
-            camera["url"] = camera["url"].replace("192.168.1.102", ip)
+            camera["url"] = camera["url"].replace("rtsp://*:554", f"rtsp://{ip}:554")
             public_cameras.append(camera)
         res = requests.post(url=cam_url, json={"cameras": public_cameras, "email": email})
         print("camera", res.status_code)
