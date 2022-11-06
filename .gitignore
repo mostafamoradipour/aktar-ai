@@ -4,8 +4,3 @@
 *.jpg
 *.png
 utils
-UI/.next
-UI/node_modules
-UI/app
-UI/dist
-*.log
