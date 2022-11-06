@@ -27,7 +27,6 @@ class PersonVerifier(object):
             geting max confidence for a peron's queue 
         '''
         queue_size = queue_features.qsize()
-        print(f"Query size : {queue_size}")
         features = [queue_features.queue[i] for i in range(queue_size)]
         features = np.array(features)
         confs = (1 + (features @ norm_feat)).reshape(-1)

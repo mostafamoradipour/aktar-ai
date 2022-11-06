@@ -2,7 +2,7 @@ response_code:
   ok: 200
   bad_request: 400
 
-email: mostafa.moradipoor73@gmail.com
+email: alr.akbari@gmail.com
 
 cam:
   mongodb:
@@ -38,6 +38,6 @@ cdm:
     host: 0.0.0.0
     port: 27017
     database: Aktar
-    collection: CDM_0_2_0_Test10
+    collection: CDM_0_2_0_Test_nov_19.26
     queue_maxsize: 10
 
