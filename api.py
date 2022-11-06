@@ -1,5 +1,4 @@
 from service_ba.personSearch import searchEngine
-# from service_cs.ds_streaming import Streamer
 from service_cs.streaming import Streamer
 from flask import Flask, request, jsonify
 from service_db.api_db import Database
@@ -22,6 +21,7 @@ app = Flask(__name__)
 CORS(app)
 cam_col = Database(cfg["cam"]["mongodb"])
 cdm_col = Database(cfg["cdm"]["mongodb"])
+cdm_col.reset()
 response_code = cfg["response_code"]
 
 

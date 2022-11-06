@@ -1,0 +1,196 @@
+@use "./fonts/fonts.scss";
+
+* {
+  font-family: "Open Sans", Verdana, Geneva, Tahoma, sans-serif;
+
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  text-decoration: none;
+}
+
+a:visited,
+a:active,
+a {
+  color: inherit;
+}
+
+html,
+body {
+  overflow: hidden;
+}
+
+#app {
+  overflow-x: hidden;
+  overflow-y: hidden;
+
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.content {
+  width: 100%;
+  margin: auto;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  padding: 1%;
+  padding-top: 10vw;
+}
+
+// TODO - needs to be moved to component
+.chart-container {
+  width: 100%;
+  height: 100%;
+  padding: 24px 0;
+}
+
+.home {
+  overflow-x: hidden;
+  overflow-y: hidden;
+
+  width: 100vw;
+  height: 100vh;
+
+  animation-name: background-movement;
+  animation-duration: 100s;
+  animation-timing-function: ease-in;
+  animation-iteration-count: infinite;
+
+  outline: none;
+  background-color: rgb(156, 154, 154);
+  background-image: url("/images/store-render-3.avif");
+  background-repeat: no-repeat;
+  background-position: right center;
+  background-size: cover;
+
+  background-blend-mode: overlay;
+  filter: brightness(1.12);
+}
+
+@keyframes background-movement {
+  0% {
+    background-position: right center;
+  }
+
+  50% {
+    background-position: 30% center;
+  }
+
+  100% {
+    background-position: right center;
+  }
+}
+
+.home-video {
+  width: 100vw;
+  height: 100%;
+
+  object-fit: cover;
+}
+
+.home-title-container {
+  text-align: center;
+
+  .home-title {
+    font-family: Inter;
+    font-size: 36px;
+    font-weight: 500;
+    line-height: 52px;
+    // text-shadow: -4px 8px 0 #e8c929;
+  }
+
+  .learn-more {
+    font-family: Inter;
+    font-size: 20px;
+    font-weight: 500;
+    margin-top: 80px;
+    padding: 18px 50px;
+    transition: all 0.2s ease-out;
+    color: #e8c929;
+    border: none;
+    border-radius: 45px;
+    background-color: black;
+    box-shadow: 0 4px 10px #00000091;
+
+    &:hover {
+      cursor: pointer;
+      background-color: #eccb28;
+      box-shadow: 0 4px 16px #00000088;
+
+      a {
+        color: #000;
+      }
+    }
+  }
+}
+
+//  Utils
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.m-4 {
+  margin: 4px;
+}
+
+.mr-4 {
+  margin-right: 4px;
+}
+
+.ml-4 {
+  margin-left: 4px;
+}
+
+.mb-40 {
+  margin-bottom: 40px
+}
+
+.d-none {
+  display: none !important;
+}
+
+.pointer {
+  cursor: pointer;
+}
+
+#main-scene {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.align-center {
+  text-align: center;
+}
+
+// lib-fixes
+
+.tp-dfwv {
+  z-index: 2;
+}
+
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  height: 100vh;
+  padding: 8rem 15rem;
+  gap: 16px;
+
+  &>* {
+    flex-basis: 30%;
+  }
+}

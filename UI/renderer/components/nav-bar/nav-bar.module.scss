@@ -1,0 +1,158 @@
+.nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  width: 100%;
+  padding: 1rem 1.5rem;
+
+  .menu-background {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    left: 0;
+
+    width: 370px;
+    height: 100vh;
+
+    transition: all .3s ease-in-out;
+
+    opacity: 0;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, .1);
+  }
+
+  .menu-background.d-right {
+    right: 0;
+    left: auto;
+  }
+
+  .opacity-1 {
+    opacity: .85;
+  }
+
+  .option-container {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+
+    .sign-in-btn-container {
+      position: relative;
+      top: 7px;
+      right: 24px;
+
+      align-self: flex-start;
+    }
+  }
+
+  .option {
+    position: relative;
+    z-index: 2;
+
+    text-align: center;
+
+    &:hover {
+      cursor: pointer;
+    }
+  }
+
+  .material-icons {
+    font-size: 24px;
+  }
+
+  .icon-text {
+    font-size: .51rem;
+    font-weight: 600;
+
+    margin-top: 4px;
+  }
+
+  // & > div > div {
+  //   display: flex;
+  //   align-items: center;
+  //   flex-direction: column;
+  //   justify-content: center;
+  // }
+  .menu {
+    // background-color: rgb(173, 81, 81);
+    position: absolute;
+    z-index: 2;
+    top: 100%;
+
+    display: none;
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: flex-start;
+
+    width: 220px;
+    margin-top: 6px;
+    padding: 0 1.1rem;
+
+    transition: opacity .5s ease-out;
+    text-align: center;
+
+    opacity: 0;
+  }
+
+  .menu.right-side {
+    // padding: 0 5rem 0 0;
+    left: -140px;
+  }
+
+  .menu-active {
+    opacity: 1;
+  }
+
+  .menu-visible {
+    // margin-top: -16px;
+    display: flex;
+  }
+
+  .sign-in-btn {
+    font-size: .96rem;
+    font-weight: 300;
+
+    padding: .9rem 1.2rem;
+
+    cursor: pointer;
+    transition: all .3s ease-in-out;
+
+    color: white;
+    border: none;
+    border-radius: 5px;
+    background-color: black;
+
+    &:hover {
+      color: black;
+      background-color: white;
+    }
+  }
+}
+
+.elevated {
+  position: fixed;
+  z-index: 1;
+}
+
+@media screen and (min-width: 768px) {
+  .nav-bar {
+    padding: 1.5rem 2rem 0 2rem;
+
+    .material-icons {
+      font-size: 64px;
+    }
+
+    .icon-text {
+      font-size: .9rem;
+
+      margin-top: 8px;
+    }
+
+    &>div>div {
+      display: flex;
+      align-items: center;
+      flex-direction: column;
+      justify-content: center;
+    }
+  }
+}

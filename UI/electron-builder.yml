@@ -1,0 +1,17 @@
+appId: us.leamech.aktar
+productName: Aktar
+copyright: Copyright © 2022 LeaMech
+directories:
+  output: dist
+  buildResources: resources
+files:
+  - from: .
+    filter:
+      - package.json
+      - app
+linux:
+  target:
+    - target: AppImage
+      # arch: arm64
+
+publish: null

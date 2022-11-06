@@ -1,0 +1,51 @@
+.options {
+  position: absolute;
+  right: 0;
+  bottom: 30%;
+
+  width: 300px;
+  padding: 24px;
+
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 4px 21px 7px rgba(0, 0, 0, 0.12);
+}
+.option {
+  font-size: 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  height: 100%;
+  margin-bottom: 16px;
+
+  transition: all 0.2s ease-in-out;
+  text-align: center;
+
+  border-radius: 8px;
+  input[type="checkbox"] {
+    position: absolute;
+    z-index: -1;
+
+    opacity: 0;
+  }
+  input[type="checkbox"] + label {
+    width: 100%;
+    height: 100%;
+    padding: 24px;
+
+    transition: all 0.2s ease-in-out;
+
+    border-radius: 8px;
+  }
+  /* choose the label near the checkbox when it is checked */
+  input[type="checkbox"]:checked + label {
+    color: #fff;
+    background-color: #000;
+  }
+}
+.option:hover {
+  background-color: rgba(180, 180, 180, 0.404);
+}

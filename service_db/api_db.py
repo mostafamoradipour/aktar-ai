@@ -12,6 +12,9 @@ class Database():
     def remove_cam(self, name):
         self.collection.delete_many({"name": name})
 
+    def reset(self):
+        self.collection.drop()
+
     def get_docs(self):
         docs = []
         # documents = self.collection.find({"id": {"$gt": last_id}})

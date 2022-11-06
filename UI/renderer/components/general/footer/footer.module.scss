@@ -1,0 +1,97 @@
+.footer {
+  position: absolute;
+  z-index: 1;
+  bottom: 30px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  .footer-logo-container {
+    .text {
+      // font-family: Tesla;
+
+      display: block;
+
+      font-weight: 500;
+    }
+  }
+  .sound-container {
+    position: absolute;
+    left: 90px;
+  }
+  #sound {
+    position: absolute;
+    left: 90px;
+
+    visibility: hidden;
+
+    width: 45px;
+    height: 45px;
+
+    transition: all 0.2s;
+
+    border: 0;
+    background-color: transparent;
+  }
+  #sound:hover {
+    cursor: pointer;
+
+    border-radius: 50%;
+    background-color: rgb(230, 230, 230);
+  }
+}
+.footer > * {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  justify-content: center;
+}
+
+.visible {
+  visibility: visible !important;
+}
+
+@media screen and (min-width: 1024px) {
+  .footer-logo-container > .text {
+    display: block;
+  }
+  .footer {
+    justify-content: center;
+    .footer-mobile-option {
+      display: none;
+    }
+    #sound {
+      position: absolute;
+      left: 90px;
+
+      visibility: hidden;
+
+      width: 45px;
+      height: 45px;
+
+      transition: all 0.2s;
+
+      border: 0;
+      background-color: transparent;
+    }
+    .footer #sound:hover {
+      cursor: pointer;
+
+      border-radius: 50%;
+      background-color: rgb(230, 230, 230);
+    }
+  }
+  .sound-container {
+    position: absolute;
+    left: 90px;
+  }
+  .visible {
+    visibility: visible !important;
+  }
+
+  .footer-logo-container > .text {
+    display: block;
+  }
+}

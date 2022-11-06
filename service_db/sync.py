@@ -25,8 +25,8 @@ def sync_negar(cam_col, cdm_col, email):
         if len(public_persons):
             res = requests.post(url=cdm_url, json={"images": public_persons, "email": email})
             print("CDM", res.status_code)
-        if res.status_code == 200:
-            count = len(persons)
+            if res.status_code == 200:
+                count = len(persons)
         sleep(1)
 
 
