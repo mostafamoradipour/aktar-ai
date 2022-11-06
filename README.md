@@ -28,7 +28,7 @@ Put the [pretrained weights](https://drive.google.com/file/d/19I-MZdctYKmVf3nu5D
 
 `python api.py`
 
-<h3>Finally run the UI by running these commands:</h3>
+<h3>Finally get and run the UI code by running these commands:</h3>
 
 `git clone git@github.com:YasharSL/Aktar.git UI`
 
