@@ -30,6 +30,14 @@ Put the [pretrained weights](https://drive.google.com/file/d/19I-MZdctYKmVf3nu5D
 
 <h3>Finally run the UI by running these commands:</h3>
 
+`git clone git@github.com:YasharSL/Aktar.git UI`
+
 `cd UI`
+
+`git pull`
+
+`git checkout 4e80ba55`
+
 `npm install`
+
 `npm run dev`
