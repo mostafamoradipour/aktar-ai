@@ -1,8 +1,8 @@
+from .extraction import FeatureExtractor
+from service_db.cdm_db import Database
+from .detection import PersonDetector
 from numpy.linalg import norm
 import numpy as np
-from .extraction import FeatureExtractor
-from .detection import PersonDetector
-from service_db.cdm_db import Database
 
 
 class PersonVerifier(object):
@@ -28,11 +28,8 @@ class PersonVerifier(object):
             max_conf = (1 + (self.features @ norm_feat.T)).max() / 2
         if max_conf >= self.thresh:
             find_face = True
-        
         return find_face
 
-
-    
     def extract_feat(self, img):
         if len(img.shape) != 3:
             return None

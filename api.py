@@ -1,8 +1,4 @@
-from service_ba.personSearch import searchEngine
-from service_cs.streaming import Streamer
 from flask import Flask, request, jsonify
-from service_db.api_db import Database
-from service_db.sync import sync_negar
 from threading import Thread
 from flask_cors import CORS
 from waitress import serve
@@ -11,6 +7,11 @@ import argparse
 import asyncio
 import yaml
 import json
+
+from service_ba.personSearch import searchEngine
+from service_cs.streamer import Streamer
+from service_db.api_db import Database
+from service_db.sync import sync_negar
 
 
 with open('config.yaml', 'r') as f:
@@ -34,8 +35,8 @@ async def cdm(websocket):
             cameras = cam_col.get_docs()
             await websocket.send(json.dumps({"cameras": cameras})) 
         elif command == "start":
-            camera = message["cameras"][0]
-            cdm_engine.vid_add = camera["url"]
+            for camera in message["cameras"]:
+                cdm_engine.cam_urls.append(camera["url"])
             cdm_engine.start()
         elif command == "stop":
             cdm_engine.stop()
