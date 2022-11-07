@@ -1,4 +1,5 @@
 from pymongo import MongoClient
+from queue import Queue
 import numpy as np
 import base64
 import cv2
@@ -10,29 +11,51 @@ class Database():
         port = int(cfg['port'])
         client = MongoClient(host, port)
         self.collection = client[cfg['database']][cfg['collection']]
+        self.queue_size = cfg['queue_maxsize']
 
     def load_feature(self):
-        samples = []
+        samples = dict()
+        ids = []
+        areas = []
         documents = self.collection.find()
-        self.id_counter = 0
+        id_counter = 0
         try:
             for index, doc in enumerate(documents):
-                samples.append(np.array(doc['feature']))
-            samples = np.array(samples)    
-            self.id_counter = max([i['id'] for i in self.collection.find()])      
+                # samples.append(np.array(doc['feature']))
+                q = Queue(maxsize = self.queue_size)
+                q.put((np.array(doc['feature'])))
+                samples[index] = q
+                ids.append(doc['id'])
+                areas.append(doc['area'])
+            # ids = np.array(ids)
+            # areas = np.array(areas) 
+            # samples = np.array(samples) 
+            id_counter = max([i['id'] for i in self.collection.find()]) + 1    
         except:
             pass
-        return samples
+        return ids, areas, samples, id_counter
 
-    def save_feature(self, face, norm_feat):
+    def save_feature(self, face, norm_feat, area, id):
         _, im_arr = cv2.imencode('.jpg', face)  # im_arr: image in Numpy one-dim array format.
         im_bytes = im_arr.tobytes()
         im_b64 = base64.b64encode(im_bytes).decode()
-        self.id_counter += 1
-        record = {'id': self.id_counter,
+        record = {'id': id,
                   'face': im_b64,
-                  'feature': norm_feat.tolist()}
+                  'feature': norm_feat.tolist(),
+                  'area': area}
         self.collection.insert_one(record)
+
+    def update_feature(self, face, norm_feat, area, id):
+        _, im_arr = cv2.imencode('.jpg', face)  # im_arr: image in Numpy one-dim array format.
+        im_bytes = im_arr.tobytes()
+        im_b64 = base64.b64encode(im_bytes).decode()
+        record = {'id': id,
+                  'face': im_b64,
+                  'feature': norm_feat.tolist(),
+                  'area': area}
+        _filter = {'id': id}
+        update = { "$set": record}
+        self.collection.update_one(_filter, update)
 
     def get_docs(self):
         docs = []

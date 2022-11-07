@@ -4,7 +4,7 @@ import copy
 import cv2
 
 from .utils.general import check_img_size, non_max_suppression_person, scale_coords, xyxy2xywh
-from .utils.utils import get_box, letterbox, scale_coords_landmarks, get_objects
+from .utils.utils import get_box, letterbox, scale_coords_landmarks, get_objects, ignore_boxes
 
 
 class PersonDetector(object):
@@ -17,6 +17,11 @@ class PersonDetector(object):
         self.img_size = cfg['img_size']
         self.conf_thres = cfg['conf_thres']
         self.iou_thres = cfg['iou_thres']
+        self.min_area = cfg['min_area']
+        self.min_ratio = cfg['min_ratio']
+        self.max_ratio = cfg['max_ratio']
+        self.ltrb = [cfg['left_pad'], cfg['top_pad'],
+                     cfg['right_pad'], cfg['bottom_pad']]
 
         # device = 'cpu' if not torch.cuda.is_available() or cfg['device'] == 'cpu' else 'cuda:0'
         # self.device = torch.device(device)
@@ -63,6 +68,14 @@ class PersonDetector(object):
 
         # Apply NMS
         pred = non_max_suppression_person(pred, self.conf_thres, self.iou_thres)
+
+        # Filter boxes by aspect ratio and area and margin
+        pred = ignore_boxes(boxes = pred, img_shape = img.shape[2:], 
+                            ltrb = self.ltrb, min_area = self.min_area,
+                            min_ratio = self.min_ratio, max_ratio = self.max_ratio) 
+                            
+
+
 
         # Process detections
         for i, det in enumerate(pred):  # detections per image
