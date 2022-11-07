@@ -17,7 +17,7 @@ cdm:
   detection:
     device: 'gpu'
     img_size: 640
-    conf_thres: 0.95
+    conf_thres: 0.9
     iou_thres: 0.4
     min_area: 1000
     min_ratio: 1.4
