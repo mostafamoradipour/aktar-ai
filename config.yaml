@@ -17,7 +17,7 @@ cdm:
   detection:
     device: 'gpu'
     img_size: 640
-    conf_thres: 0.8
+    conf_thres: 0.95
     iou_thres: 0.4
     weights: service_ba/verification/detection/weights/crowdhuman_yolov5m.onnx
 
