@@ -26,12 +26,10 @@ cdm:
     top_pad: 10
     right_pad: 20
     bottom_pad: 10
-    # weights: 'cdm/verification/detection/weights/yolov5n-face.onnx'
     weights: service_ba/verification/detection/weights/crowdhuman_yolov5m.onnx
 
   extraction:
     device: gpu
-    # weights: 'cdm/verification/extraction/weights/webface_r50.onnx'
     weights: service_ba/verification/extraction/weights/osnet_x0_25_msmt17.onnx
 
   mongodb:
@@ -40,4 +38,3 @@ cdm:
     database: Aktar
     collection: CDM_0_2_0_Test10
     queue_maxsize: 10
-

@@ -1,8 +1,9 @@
 from pymongo import MongoClient
+from queue import Queue
 import numpy as np
 import base64
 import cv2
-from queue import Queue
+
 
 class Database():
     def __init__(self, cfg):
@@ -26,11 +27,9 @@ class Database():
                 samples[index] = q
                 ids.append(doc['id'])
                 areas.append(doc['area'])
-
             # ids = np.array(ids)
             # areas = np.array(areas) 
             # samples = np.array(samples) 
-
             id_counter = max([i['id'] for i in self.collection.find()]) + 1    
         except:
             pass
@@ -54,10 +53,9 @@ class Database():
                   'face': im_b64,
                   'feature': norm_feat.tolist(),
                   'area': area}
-
-        filter = {'id': id}
+        _filter = {'id': id}
         update = { "$set": record}
-        self.collection.update_one(filter, update)
+        self.collection.update_one(_filter, update)
 
     def get_docs(self):
         docs = []
