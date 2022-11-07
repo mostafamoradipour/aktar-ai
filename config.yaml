@@ -12,7 +12,7 @@ cam:
     collection: CAM
 
 cdm:
-  thresh: 0.8
+  thresh: 0.85
 
   detection:
     device: 'gpu'
@@ -37,4 +37,4 @@ cdm:
     port: 27017
     database: Aktar
     collection: CDM
-    queue_maxsize: 10
+    queue_maxsize: 100
