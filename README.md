@@ -1,4 +1,4 @@
-# How to install Aktar
+# How to install an Run Aktar
 
 <h3>First make a new python environment and name it as you want:</h3>
 
