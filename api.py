@@ -32,15 +32,14 @@ async def cdm(websocket):
         message = json.loads(message)
         command = message["command"]
         if command == "get":
-            cameras = cam_col.get_docs()
-            await websocket.send(json.dumps({"cameras": cameras})) 
+            persons = cdm_col.get_docs()
+            await websocket.send(json.dumps({"persons": persons})) 
         elif command == "start":
             for camera in message["cameras"]:
                 cdm_engine.cam_urls.append(camera["url"])
             cdm_engine.start()
         elif command == "stop":
             cdm_engine.stop()
-
 
 async def cdm_serve():
     async with websockets.serve(cdm, "localhost", 5001):
@@ -62,15 +61,6 @@ def get_cameras():
         return jsonify({"cameras": cameras}), response_code["ok"]
     except:
         return {"message": "Failed to load the cameras from database"}, response_code["bad_request"]
-
-
-@app.route("/cdm", methods=["GET"])
-def customer_data_manager():
-    try:
-        persons = cdm_col.get_docs()
-        return jsonify({"persons": persons}), response_code["ok"]
-    except:
-        return {"message": "Failed to load the customer info from database"}, response_code["bad_request"]
 
 
 @app.route("/add", methods=["POST"])
@@ -128,16 +118,20 @@ def play():
         inputs = []
         for camera in cameras:
             play = camera["play"]
-            # cam_col.update_one({"name": camera["name"]}, {"$set": {"play": play}})
             cam_col.remove_cam(camera["name"])
             cam_col.add_cam(camera)
             if play:
                 inputs.append(camera["url"])
         if len(inputs):
-            Streamer(inputs) 
+            Streamer(inputs)
         return {"message": "playing is done"}, response_code["ok"]
     except:
         {"message": "palying failed"}, response_code["bad_request"]
+
+
+@app.route("/close", methods=["POST"])
+def close():
+    pass
 
 
 def create_app():

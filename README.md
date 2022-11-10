@@ -36,7 +36,7 @@ Put the [pretrained weights](https://drive.google.com/file/d/19I-MZdctYKmVf3nu5D
 
 `git pull`
 
-`git checkout 4e80ba55`
+`git checkout v0.2.2`
 
 `npm install`
 
