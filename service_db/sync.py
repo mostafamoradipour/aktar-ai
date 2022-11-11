@@ -4,7 +4,10 @@ import requests
 
 def sync_negar(cam_col, cdm_col, email):
     cam_url = 'https://api.kachrobotics.com/api/user/post_camera_stream/'
-    cdm_url = 'https://api.kachrobotics.com/api/user/post_customer_data/'
+    cdm_url = 'https://api.kachrobotics.com/api/user/customer_data/'
+    res = requests.delete(url=cdm_url, json={"email": email})
+    if res.status_code == 200:
+        print("Negar CDM deleted!")
     count = 0
     while True:
         cameras = cam_col.get_docs()
