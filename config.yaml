@@ -38,4 +38,4 @@ cdm:
     port: 27017
     database: Aktar
     collection: CDM
-    queue_maxsize: 100
+    queue_maxsize: 10
