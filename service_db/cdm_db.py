@@ -14,6 +14,7 @@ class Database():
 
     def load_feature(self):
         features = dict()
+        faces = []
         ids = []
         areas = []
         aspect_ratioes = []
@@ -25,6 +26,7 @@ class Database():
                 q = Queue(maxsize = self.queue_size)
                 q.put((np.array(doc['feature'])))
                 features[index] = q
+                faces.append(np.array(ddoc['face_']))
                 ids.append(doc['id'])
                 areas.append(doc['area'])
                 aspect_ratioes.append(doc['aspect_ratio'])
@@ -33,26 +35,40 @@ class Database():
             id_counter = max([i['id'] for i in self.collection.find()]) + 1    
         except:
             pass
-        return ids, areas, aspect_ratioes, features, time_stamps, id_counter
+        return ids, areas, aspect_ratioes, features, faces, time_stamps, id_counter
 
-    def save_feature(self, face, norm_feat, area, aspect_ratio, id, time_stamp):
+    def save_feature(self, face, norm_feat, face_, area, aspect_ratio, id, time_stamp):
         _, im_arr = cv2.imencode('.jpg', face)  # im_arr: image in Numpy one-dim array format.
         im_bytes = im_arr.tobytes()
         im_b64 = base64.b64encode(im_bytes).decode()
+
+        # _, face_arr = cv2.imencode('.jpg', face_) 
+        # face_bytes = face_arr.tobytes()
+        # face_b64 = base64.b64encode(face_bytes).decode()
+
+
         record = {'id': id,
                   'face': im_b64,
+                  'face_': face.tolist(),
                   'feature': norm_feat.tolist(),
                   'area': area,
                   'aspect_ratio': aspect_ratio,
                   'time': time_stamp}
         self.collection.insert_one(record)
 
-    def update_feature(self, face, norm_feat, area, aspect_ratio, id, time_stamp):
+    def update_feature(self, face, norm_feat, face_, area, aspect_ratio, id, time_stamp):
         _, im_arr = cv2.imencode('.jpg', face)  # im_arr: image in Numpy one-dim array format.
         im_bytes = im_arr.tobytes()
         im_b64 = base64.b64encode(im_bytes).decode()
+
+        # _, face_arr = cv2.imencode('.jpg', face_) 
+        # face_bytes = face_arr.tobytes()
+        # face_b64 = base64.b64encode(face_bytes).decode()
+
+
         record = {'id': id,
                   'face': im_b64,
+                  'face_': face.tolist(),
                   'feature': norm_feat.tolist(),
                   'area': area,
                   'aspect_ratio': aspect_ratio,

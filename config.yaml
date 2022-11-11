@@ -2,7 +2,7 @@ response_code:
   ok: 200
   bad_request: 400
 
-email: alr.akbari@gmail.com
+email: mostafa.moradipoor73@gmail.com
 
 cam:
   mongodb:
@@ -13,11 +13,13 @@ cam:
 
 cdm:
   thresh: 0.8
+  intensity_thresh: 40
   update_threshold: 0.92
+  iou_threshold_face_person: 0.01
   detection:
     device: 'gpu'
     img_size: 640
-    conf_thres: 0.8
+    conf_thres: 0.5
     iou_thres: 0.4
     min_area: 1000
     min_ratio: 1.4
@@ -34,10 +36,24 @@ cdm:
     # weights: 'cdm/verification/extraction/weights/webface_r50.onnx'
     weights: service_ba/verification/extraction/weights/osnet_x0_25_msmt17.onnx
 
+  face_detection:
+      device: 'gpu'
+      img_size: 640
+      conf_thres: 0.3
+      iou_thres: 0.2
+      min_area: 1000
+      min_ratio: 1.4
+      max_ratio: 4
+      left_pad: 30
+      top_pad: 10
+      right_pad: 20
+      bottom_pad: 10
+      weights: 'service_ba/verification/detection/weights/yolov5n-face.onnx'
+
   mongodb:
     host: 0.0.0.0
     port: 27017
     database: Aktar
-    collection: CDM_0_2_0_Test_nov_20_41
+    collection: CDM_0_2_0_Test_nov_20_51
     queue_maxsize: 10
 

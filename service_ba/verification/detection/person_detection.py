@@ -95,6 +95,6 @@ class PersonDetector(object):
                 # face = get_largest_face_img(orgimg, boxes)
                 objs = get_objects(orgimg, boxes)
                 
-                return objs
+                return objs, boxes
 
-            return None
+            return None, None
