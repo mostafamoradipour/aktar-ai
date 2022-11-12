@@ -225,7 +225,8 @@ class PersonVerifier(object):
                             self.count +=1
                         
                         # if area > self.areas[num_queue] and aspect_ratio > self.aspect_ratioes[num_queue] and intensity >= self.intensity_thresh: #or (self.faces[num_queue].shape[0]==1 and face.shape[0] > 1):
-                        if area > self.areas[num_queue]:
+                        print(intensity)
+                        if area > self.areas[num_queue] and intensity >= self.intensity_thresh:
                             if self.faces[num_queue].shape[0]==1 or face.shape[0] > 1:
                                 self.faces[num_queue] = face
 
@@ -239,5 +240,3 @@ class PersonVerifier(object):
 
                         else:
                             self.database.update_time(id =  query_id, time_stamp = self.time_stamps[num_queue])
-
-                    
