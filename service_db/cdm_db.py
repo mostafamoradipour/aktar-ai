@@ -26,7 +26,7 @@ class Database():
                 q = Queue(maxsize = self.queue_size)
                 q.put((np.array(doc['feature'])))
                 features[index] = q
-                faces.append(np.array(ddoc['face_']))
+                faces.append(np.array(doc['face_']))
                 ids.append(doc['id'])
                 areas.append(doc['area'])
                 aspect_ratioes.append(doc['aspect_ratio'])

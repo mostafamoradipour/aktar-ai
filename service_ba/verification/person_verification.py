@@ -224,7 +224,8 @@ class PersonVerifier(object):
                             print("found face")
                             self.count +=1
                         
-                        if area > self.areas[num_queue] and aspect_ratio > self.aspect_ratioes[num_queue] and intensity >= self.intensity_thresh: #or (self.faces[num_queue].shape[0]==1 and face.shape[0] > 1):
+                        # if area > self.areas[num_queue] and aspect_ratio > self.aspect_ratioes[num_queue] and intensity >= self.intensity_thresh: #or (self.faces[num_queue].shape[0]==1 and face.shape[0] > 1):
+                        if area > self.areas[num_queue]:
                             if self.faces[num_queue].shape[0]==1 or face.shape[0] > 1:
                                 self.faces[num_queue] = face
 
