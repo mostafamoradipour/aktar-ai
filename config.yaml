@@ -2,7 +2,7 @@ response_code:
   ok: 200
   bad_request: 400
 
-email: mostafa.moradipoor73@gmail.com
+email: esi4@gmail.com
 
 cam:
   mongodb:
@@ -39,21 +39,14 @@ cdm:
   face_detection:
       device: 'gpu'
       img_size: 640
-      conf_thres: 0.3
+      conf_thres: 0.6
       iou_thres: 0.2
-      min_area: 1000
-      min_ratio: 1.4
-      max_ratio: 4
-      left_pad: 30
-      top_pad: 10
-      right_pad: 20
-      bottom_pad: 10
       weights: 'service_ba/verification/detection/weights/yolov5n-face.onnx'
 
   mongodb:
     host: 0.0.0.0
     port: 27017
     database: Aktar
-    collection: CDM_0_2_0_Test_nov_20_51
+    collection: CDM_0_2_0_Test_nov_20_57
     queue_maxsize: 10
 

@@ -40,6 +40,8 @@ class PersonVerifier(object):
         else:
             self.q_idx_best_person = []
         self.counter = 0
+
+        self.count = 0
     
     def get_confidence(self, queue_features, norm_feat):
         '''
@@ -217,6 +219,10 @@ class PersonVerifier(object):
                         self.q_idx_best_person[num_queue] += 1
                         body_time_stamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
                         self.time_stamps[num_queue].append(body_time_stamp)
+                        if  face.shape[0] > 1 :
+                            cv2.imwrite(f"save/a_{self.count}.jpg", face)
+                            print("found face")
+                            self.count +=1
                         
                         if area > self.areas[num_queue] and aspect_ratio > self.aspect_ratioes[num_queue] and intensity >= self.intensity_thresh: #or (self.faces[num_queue].shape[0]==1 and face.shape[0] > 1):
                             if self.faces[num_queue].shape[0]==1 or face.shape[0] > 1:
@@ -229,9 +235,7 @@ class PersonVerifier(object):
                             self.database.update_feature(body, norm_feat, self.faces[num_queue] , area = area, aspect_ratio = aspect_ratio, id = query_id, time_stamp = self.time_stamps[num_queue])
                             self.q_idx_best_person[num_queue] = 1
                         
-                            # else:
-                            #     self.database.update_time(id =  query_id, time_stamp = self.time_stamps[num_queue])
-                        
+
                         else:
                             self.database.update_time(id =  query_id, time_stamp = self.time_stamps[num_queue])
 
