@@ -51,8 +51,6 @@ class PersonVerifier(object):
             self.q_idx_best_person = []
         self.counter = 0
 
-        self.count = 0
-    
     def get_confidence(self, queue_features, norm_feat):
         '''
             geting max confidence for a peron's queue 
@@ -210,7 +208,6 @@ class PersonVerifier(object):
                     self.id_counter += 1
                     print(best_body_time_stamp)
 
-
                 else:
                     print(f"Find a detected person_{query_id} confidence: {found_conf}, {best_body_time_stamp}")
                     if found_conf > self.update_thres:
@@ -228,9 +225,8 @@ class PersonVerifier(object):
                         body_time_stamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
                         self.time_stamps[num_queue].append(body_time_stamp)
                         if  face.shape[0] > 1 :
-                            cv2.imwrite(f"save/a_{self.count}.jpg", face)
+                            cv2.imwrite(f"Faces/{query_id}_{body_time_stamp}.jpg", face)
                             print("found face")
-                            self.count +=1
                         
                         # if area > self.areas[num_queue] and aspect_ratio > self.aspect_ratioes[num_queue] and intensity >= self.intensity_thresh: #or (self.faces[num_queue].shape[0]==1 and face.shape[0] > 1):
                         print(intensity)

@@ -7,6 +7,7 @@ import argparse
 import asyncio
 import yaml
 import json
+import os
 
 from service_ba.personSearch import searchEngine
 from service_cs.streamer import Streamer
@@ -23,6 +24,7 @@ CORS(app)
 cam_col = Database(cfg["cam"]["mongodb"])
 cdm_col = Database(cfg["cdm"]["mongodb"])
 cdm_col.reset()
+os.system("rm -rf Faces/*")
 print("CDM of Aktar deleted!")
 response_code = cfg["response_code"]
 
