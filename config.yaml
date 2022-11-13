@@ -13,16 +13,18 @@ cam:
     collection: CAM
 
 cdm:
-  thresh: 0.85
-
+  thresh: 0.8
+  intensity_thresh: 40
+  update_threshold: 0.92
+  iou_threshold_face_person: 0.01
   detection:
     device: 'gpu'
     img_size: 640
     conf_thres: 0.9
     iou_thres: 0.4
     min_area: 1000
-    min_ratio: 1.4
-    max_ratio: 4
+    min_ratio: 1.7
+    max_ratio: 2.5
     left_pad: 30
     top_pad: 10
     right_pad: 20
@@ -32,6 +34,13 @@ cdm:
   extraction:
     device: gpu
     weights: service_ba/verification/extraction/weights/osnet_x0_25_msmt17.onnx
+
+  face_detection:
+      device: 'gpu'
+      img_size: 640
+      conf_thres: 0.6
+      iou_thres: 0.2
+      weights: 'service_ba/verification/detection/weights/yolov5n-face.onnx'
 
   mongodb:
     host: 0.0.0.0

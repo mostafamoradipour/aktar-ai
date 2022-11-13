@@ -139,3 +139,12 @@ def scale_coords_landmarks(img1_shape, coords, img0_shape, ratio_pad=None):
     coords[:, 8].clip(0, img0_shape[1])  # x5
     coords[:, 9].clip(0, img0_shape[0])  # y5
     return coords
+
+
+def get_faces(img, boxes):
+    faces = []
+    for box in boxes:
+        face = img[box[1]:box[3], box[0]:box[2], :]
+        if face.shape[0] * face.shape[1] > 200:
+            faces.append(face)
+    return faces

@@ -3,13 +3,13 @@ import onnxruntime
 import copy
 import cv2
 
-from utils.general import check_img_size, non_max_suppression_face, scale_coords, xyxy2xywh
-from utils.utils import get_box, get_largest_face_img, letterbox, scale_coords_landmarks, get_faces
+from .utils.general import check_img_size, non_max_suppression_face, scale_coords, xyxy2xywh
+from .utils.utils import get_box, get_largest_face_img, letterbox, scale_coords_landmarks, get_faces
 
 
-class PersonDetector(object):
+class FaceDetector(object):
     def __init__(self, cfg=None):
-        super(PersonDetector, self).__init__()
+        super(FaceDetector, self).__init__()
 
         # TODO: 1. to add onnx runtime.
         #       2. to add openvino runtime for more efficiency on intel devices.
@@ -92,6 +92,6 @@ class PersonDetector(object):
                 # face = get_largest_face_img(orgimg, boxes)
                 face = get_faces(orgimg, boxes)
                 
-                return face
+                return face, boxes
 
-            return None
+            return None, None

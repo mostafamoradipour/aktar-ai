@@ -14,48 +14,79 @@ class Database():
         self.queue_size = cfg['queue_maxsize']
 
     def load_feature(self):
-        samples = dict()
+        features = dict()
+        faces = []
         ids = []
         areas = []
+        aspect_ratioes = []
+        time_stamps = []
         documents = self.collection.find()
         id_counter = 0
         try:
             for index, doc in enumerate(documents):
-                # samples.append(np.array(doc['feature']))
                 q = Queue(maxsize = self.queue_size)
                 q.put((np.array(doc['feature'])))
-                samples[index] = q
+                features[index] = q
+                faces.append(np.array(doc['face_']))
                 ids.append(doc['id'])
                 areas.append(doc['area'])
-            # ids = np.array(ids)
-            # areas = np.array(areas) 
-            # samples = np.array(samples) 
+                aspect_ratioes.append(doc['aspect_ratio'])
+                time_stamps.append(doc['time'])
+
             id_counter = max([i['id'] for i in self.collection.find()]) + 1    
         except:
             pass
-        return ids, areas, samples, id_counter
+        return ids, areas, aspect_ratioes, features, faces, time_stamps, id_counter
 
-    def save_feature(self, face, norm_feat, area, id):
+    def save_feature(self, face, norm_feat, face_, area, aspect_ratio, id, time_stamp):
         _, im_arr = cv2.imencode('.jpg', face)  # im_arr: image in Numpy one-dim array format.
         im_bytes = im_arr.tobytes()
         im_b64 = base64.b64encode(im_bytes).decode()
+
+        # _, face_arr = cv2.imencode('.jpg', face_) 
+        # face_bytes = face_arr.tobytes()
+        # face_b64 = base64.b64encode(face_bytes).decode()
+
+
         record = {'id': id,
                   'face': im_b64,
+                  'face_': face.tolist(),
                   'feature': norm_feat.tolist(),
-                  'area': area}
+                  'area': area,
+                  'aspect_ratio': aspect_ratio,
+                  'time': time_stamp}
         self.collection.insert_one(record)
 
-    def update_feature(self, face, norm_feat, area, id):
+    def update_feature(self, face, norm_feat, face_, area, aspect_ratio, id, time_stamp):
         _, im_arr = cv2.imencode('.jpg', face)  # im_arr: image in Numpy one-dim array format.
         im_bytes = im_arr.tobytes()
         im_b64 = base64.b64encode(im_bytes).decode()
+
+        # _, face_arr = cv2.imencode('.jpg', face_) 
+        # face_bytes = face_arr.tobytes()
+        # face_b64 = base64.b64encode(face_bytes).decode()
+
+
         record = {'id': id,
                   'face': im_b64,
+                  'face_': face.tolist(),
                   'feature': norm_feat.tolist(),
-                  'area': area}
-        _filter = {'id': id}
+                  'area': area,
+                  'aspect_ratio': aspect_ratio,
+                  'time': time_stamp}
+
+        filter = {'id': id}
         update = { "$set": record}
-        self.collection.update_one(_filter, update)
+        self.collection.update_one(filter, update)
+    
+    def update_time(self, id, time_stamp):
+        
+        record = {'id': id,
+                  'time': time_stamp}
+
+        filter = {'id': id}
+        update = { "$set": record}
+        self.collection.update_one(filter, update)
 
     def get_docs(self):
         docs = []
