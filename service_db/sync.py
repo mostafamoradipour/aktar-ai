@@ -19,8 +19,8 @@ def sync_negar(cam_col, cdm_col, email):
         print("camera", res.status_code)
         public_persons = []
         for person in persons[count:]:
-            del person["feature"]
-            person["appearance"] = person["face"]
+            del person["body_feature"]
+            person["appearance"] = person["best_body"]
             public_persons.append(person)
         if len(public_persons):
             res = requests.post(url=cdm_url, json={"images": public_persons, "email": email})
