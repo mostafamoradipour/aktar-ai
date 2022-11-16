@@ -38,20 +38,25 @@ class PersonVerifier(object):
         self.update_thres = cfg['update_threshold']
         self.iou_threshold_face_person = cfg['iou_threshold_face_person']
         self.intensity_thresh = cfg['intensity_thresh']
-
+        self.competetive_body_ratio = cfg['competetive_body_ratio']
+        self.competetive_body_area = cfg['competetive_body_area']
+        self.competetive_body_intensity = cfg['competetive_body_intensity']
+        self.competetive_face_ratio = cfg['competetive_face_ratio']
+        self.competetive_face_area = cfg['competetive_face_area']
         # loading face detection modlue
         self.detector = PersonDetector(cfg['detection'])
         self.detector_face = FaceDetector(cfg['face_detection'])
-
         # loading face feature extractor modlue
         self.extractor = FeatureExtractor(cfg['extraction'])
         self.database = Database(cfg["mongodb"])
-        self.ids, self.areas, self.aspect_ratioes, self.features, self.faces, self.time_stamps, self.id_counter =self.database.load_feature()
+        # self.ids, self.bd_best_count, self.face_count, self.bd_areas, self.bd_aspect_ratioes, self.features, self.faces, self.time_stamps, self.id_counter =
+        self.ids, body_att, face_att, self.time_stamps, self.id_counter = self.database.load_feature()
+        self.features, self.bd_count, self.bd_areas, self.bd_aspect_ratioes = body_att
+        self.faces, self.face_count, self.fa_areas, self.fa_aspect_ratioes = face_att
         if len(self.ids)>0:
             self.q_idx_best_person = [1 for i in range(len(self.ids))]
         else:
             self.q_idx_best_person = []
-        self.counter = 0
 
     def get_confidence(self, queue_features, norm_feat):
         '''
@@ -69,10 +74,7 @@ class PersonVerifier(object):
         From SORT: Computes IOU between two bboxes in the form [x1,y1,x2,y2]
         """
         person_boxes = np.expand_dims(person_boxes, 0)
-        face_boxes = np.expand_dims(face_boxes, 1)
-        # person_boxes = np.array(person_boxes)
-        # face_boxes = np.array(face_boxes)
-        
+        face_boxes = np.expand_dims(face_boxes, 1)        
         xx1 = np.maximum(face_boxes[..., 0], person_boxes[..., 0])
         yy1 = np.maximum(face_boxes[..., 1], person_boxes[..., 1])
         xx2 = np.minimum(face_boxes[..., 2], person_boxes[..., 2])
@@ -83,12 +85,6 @@ class PersonVerifier(object):
         o = wh / ((face_boxes[..., 2] - face_boxes[..., 0]) * (face_boxes[..., 3] - face_boxes[..., 1])                                      
             + (person_boxes[..., 2] - person_boxes[..., 0]) * (person_boxes[..., 3] - person_boxes[..., 1]) - wh)                                              
         return(o) 
-        
-        # if person_boxes != None and face_boxes != None:
-        #     person_boxes = np.array(person_boxes)[:,:2]
-        #     face_boxes = np.array(face_boxes)[:,:2]
-        
-        # pass
 
     def query_feature(self, norm_feat):
         found_conf = False
@@ -109,7 +105,6 @@ class PersonVerifier(object):
             found_conf = max_conf
             query_id = self.ids[arg_max]
         num_queue = arg_max
-        
         return found_conf, query_id, num_queue
 
     def map_face_person(self, num_person, faces, matched_indices):
@@ -123,7 +118,6 @@ class PersonVerifier(object):
                  mapped[i] = np.zeros(1)
         return mapped
 
-    
     def extract_feat(self, img):
         if len(img.shape) != 3:
             return None
@@ -160,13 +154,11 @@ class PersonVerifier(object):
             return False
         person, person_boxes = self.detector.detect_one(img)
         faces, face_boxes = self.detector_face.detect_one(img)
-
         matched_indices = np.empty(shape=(0,2))
         if face_boxes != None and person_boxes != None:
             # if len(face_boxes) > 2:
             #     print("find")
             iou_matrix = self.assign_face_person(person_boxes, face_boxes)
-
             if min(iou_matrix.shape) > 0:
                 a = (iou_matrix > self.iou_threshold_face_person).astype(np.int32)
                 if a.sum(1).max() == 1 and a.sum(0).max() == 1:
@@ -177,7 +169,6 @@ class PersonVerifier(object):
                     matched_indices = np.empty(shape=(0,2))
             # else:
             #     matched_indices = np.empty(shape=(0,2))
-
         if person is not None:  
             # if matched_indices.shape[0] > 0:
                 # person_face = self.map_face_person(len(person), faces, matched_indices)
@@ -186,58 +177,78 @@ class PersonVerifier(object):
                 feat = self.extractor.extract_one(body)
                 norm_feat = feat / norm(feat, axis=1)
                 found_conf, query_id, num_queue = self.query_feature(norm_feat)
-                x1,y1, x2,y2 = person_boxes[bd_idx] 
+                x1,y1, x2,y2 = person_boxes[bd_idx]
                 intensity = np.mean(img_hsv[y1 : y2, x1 : x2, 2])
-                area = body.shape[1] * body.shape[0]
-                aspect_ratio = body.shape[0] / body.shape[1]
+                bd_area = body.shape[1] * body.shape[0]
+                bd_aspect_ratio = body.shape[0] / body.shape[1]
                 best_body_time_stamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
                 face = person_face[bd_idx]
+                if  face.shape[0] > 1:
+                    fa_area = face.shape[1] * face.shape[0]
+                    fa_aspect_ratio = face.shape[0] / face.shape[1]
+                else:
+                    fa_area = 0
+                    fa_aspect_ratio = 4
                 if not found_conf:
                     print(f"Find a new person_{query_id}")
-                    new_feat  = np.expand_dims(norm_feat, 0)
+                    new_feat = np.expand_dims(norm_feat, 0)
                     q = Queue(maxsize = self.database.queue_size)
                     q.put(norm_feat)
                     self.features[self.id_counter] = q
                     self.faces.append(face)
                     self.ids.append(self.id_counter)
-                    self.areas.append(area)
-                    self.aspect_ratioes.append(aspect_ratio)
+                    self.bd_count.append(1)
+                    self.bd_areas.append(bd_area)
+                    self.bd_aspect_ratioes.append(bd_aspect_ratio)
                     self.q_idx_best_person.append(1)
                     best_body_time_stamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
                     self.time_stamps.append([best_body_time_stamp])
-                    self.database.save_feature(body, norm_feat, face, area = area, aspect_ratio = aspect_ratio, id = self.id_counter, time_stamp = [best_body_time_stamp])
+                    if fa_area == 0:
+                        self.face_count.append(0)
+                        face_count = 0
+                    else:
+                        self.face_count.append(1)
+                        face_count = 1
+                    self.fa_areas.append(fa_area)
+                    self.fa_aspect_ratioes.append(fa_aspect_ratio)
+                    self.database.save_feature(body, norm_feat, bd_area, bd_aspect_ratio, face, 
+                                              face_count, fa_area, fa_aspect_ratio,  
+                                               id = self.id_counter, time_stamp=[best_body_time_stamp])
                     self.id_counter += 1
                     print(best_body_time_stamp)
                 else:
                     print(f"Find a detected person_{query_id} confidence: {found_conf}, {best_body_time_stamp}")
+                    if  face.shape[0] > 1:
+                        upadte_by_area = fa_area > self.fa_areas[num_queue] if self.competetive_face_area else True
+                        upadte_by_ratio = fa_aspect_ratio < self.fa_aspect_ratioes[num_queue] if  self.competetive_face_ratio else True
+                        if upadte_by_area and upadte_by_ratio:
+                            self.face_count[num_queue] += 1
+                            self.database.update_face(face, self.face_count[num_queue], fa_area, fa_aspect_ratio, id=query_id)
+                    # if found_conf > self.update_thres and found_conf<0.975:
                     if found_conf > self.update_thres:
                         if self.features[num_queue].qsize() == self.database.queue_size:
                             temp_feature = self.features[num_queue].get()
-            
                         if self.q_idx_best_person[num_queue] == self.database.queue_size:
                             self.features[num_queue].get()
                             self.features[num_queue].put(temp_feature)
                             self.q_idx_best_person[num_queue] = 1
-
                         self.features[num_queue].put(norm_feat)
                         self.q_idx_best_person[num_queue] += 1
                         body_time_stamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
                         self.time_stamps[num_queue].append(body_time_stamp)
-                        if  face.shape[0] > 1 :
-                            cv2.imwrite(f"Faces/{query_id}_{body_time_stamp}.jpg", face)
-                            print("found face")
-                        
-                        # if area > self.areas[num_queue] and aspect_ratio > self.aspect_ratioes[num_queue] and intensity >= self.intensity_thresh: #or (self.faces[num_queue].shape[0]==1 and face.shape[0] > 1):
-                        print("intensity = ", intensity)
-                        if area > self.areas[num_queue] and intensity >= self.intensity_thresh:
+                        upadte_by_area = bd_area > self.bd_areas[num_queue] if self.competetive_body_area else True
+                        upadte_by_ratio = bd_aspect_ratio > self.bd_aspect_ratioes[num_queue] if  self.competetive_body_ratio else True
+                        upadte_by_intensity = intensity >= self.intensity_thresh  if  self.competetive_body_intensity else True
+                        if upadte_by_area and upadte_by_ratio and upadte_by_intensity:
                             if self.faces[num_queue].shape[0]==1 or face.shape[0] > 1:
                                 self.faces[num_queue] = face
-
                             print(f"Update person[{query_id}], ")
-                            self.areas[num_queue] = area
-                            self.aspect_ratioes[num_queue] = aspect_ratio
-                            
-                            self.database.update_feature(body, norm_feat, self.faces[num_queue] , area = area, aspect_ratio = aspect_ratio, id = query_id, time_stamp = self.time_stamps[num_queue])
+                            self.bd_areas[num_queue] = bd_area
+                            self.bd_aspect_ratioes[num_queue] = bd_aspect_ratio
+                            self.bd_count[num_queue] += 1
+                            # self.bd_best_apper[self.id_counter][self.bd_best_count[self.id_counter]] = body
+                            self.database.update_body_feature(body, self.bd_count[num_queue], norm_feat, bd_area, bd_aspect_ratio, 
+                                                        id=query_id, time_stamp=self.time_stamps[num_queue])
                             self.q_idx_best_person[num_queue] = 1
                         else:
-                            self.database.update_time(id =  query_id, time_stamp = self.time_stamps[num_queue])
+                            self.database.update_time(id=query_id, time_stamp=self.time_stamps[num_queue])

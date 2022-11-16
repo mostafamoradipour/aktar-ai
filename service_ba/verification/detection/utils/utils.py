@@ -22,7 +22,6 @@ def ignore_boxes(boxes, img_shape, ltrb = [30, 10, 20, 10], min_area = 1000, min
     return   [boxes[0][indexes]] #boxes[indexes]
 
 
-
 def get_box(img, xywh):
     h,w,c = img.shape
     x1 = int(xywh[0] * w - 0.5 * xywh[2] * w)
@@ -41,6 +40,7 @@ def get_largest_face_img(img, boxes):
     else:
         return None
 
+
 def get_objects(img, boxes):
     faces = []
     for box in boxes:
@@ -48,7 +48,6 @@ def get_objects(img, boxes):
         if face.shape[0] * face.shape[1] > 200:
             faces.append(face)
     return faces
-
 
 
 def show_results(img, xywh, conf, landmarks, class_num):

@@ -18,10 +18,15 @@ cdm:
   intensity_thresh: 50
   update_threshold: 0.92
   iou_threshold_face_person: 0.01
+  competetive_body_ratio: False
+  competetive_body_area: True
+  competetive_body_intensity: True
+  competetive_face_ratio: False
+  competetive_face_area: True
   detection:
     device: 'gpu'
     img_size: 640
-    conf_thres: 0.9
+    conf_thres: 0.7
     iou_thres: 0.4
     min_area: 1000
     min_ratio: 1.7
@@ -39,8 +44,15 @@ cdm:
   face_detection:
       device: 'gpu'
       img_size: 640
-      conf_thres: 0.6
+      conf_thres: 0.4
       iou_thres: 0.2
+      min_area: 200
+      min_ratio: 1
+      max_ratio: 4
+      left_pad: 0
+      top_pad: 0
+      right_pad: 0
+      bottom_pad: 0
       weights: 'service_ba/verification/detection/weights/yolov5n-face.onnx'
 
   mongodb:

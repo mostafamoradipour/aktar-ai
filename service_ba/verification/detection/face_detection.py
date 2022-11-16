@@ -4,7 +4,7 @@ import copy
 import cv2
 
 from .utils.general import check_img_size, non_max_suppression_face, scale_coords, xyxy2xywh
-from .utils.utils import get_box, letterbox, get_faces
+from .utils.utils import get_box, letterbox, get_faces, ignore_boxes
 
 
 class FaceDetector(object):
@@ -13,6 +13,11 @@ class FaceDetector(object):
         self.img_size = cfg['img_size']
         self.conf_thres = cfg['conf_thres']
         self.iou_thres = cfg['iou_thres']
+        self.min_area = cfg['min_area']
+        self.min_ratio = cfg['min_ratio']
+        self.max_ratio = cfg['max_ratio']
+        self.ltrb = [cfg['left_pad'], cfg['top_pad'],
+                     cfg['right_pad'], cfg['bottom_pad']]
         _provider = ['CPUExecutionProvider'] if cfg['device'] == 'cpu' else ['CUDAExecutionProvider']
         self.session = onnxruntime.InferenceSession(cfg['weights'], providers=_provider)
         self.input_name = self.session.get_inputs()[0].name
@@ -58,7 +63,9 @@ class FaceDetector(object):
 
         # Apply NMS
         pred = non_max_suppression_face(pred, self.conf_thres, self.iou_thres)
-
+        pred = ignore_boxes(boxes = pred, img_shape = img.shape[2:], 
+                            ltrb = self.ltrb, min_area = self.min_area,
+                            min_ratio = self.min_ratio, max_ratio = self.max_ratio) 
         # Process detections
         for i, det in enumerate(pred):  # detections per image
             gn = np.array(orgimg.shape)[[1, 0, 1, 0]] # normalization gain whwh
@@ -67,10 +74,8 @@ class FaceDetector(object):
                 # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(
                     img.shape[2:], det[:, :4], orgimg.shape).round()
-
                 # det[:, 5:15] = scale_coords_landmarks(
                 #     img.shape[2:], det[:, 5:15], orgimg.shape).round()
-
                 boxes = []
                 for j in range(det.shape[0]):
                     xywh = (xyxy2xywh(det[j, :4].reshape(1, 4)) / gn).reshape(-1).tolist()
@@ -79,7 +84,6 @@ class FaceDetector(object):
                     # class_num = det[j, 15].cpu().numpy()
                     box = get_box(orgimg, xywh)
                     boxes.append(box)
-
                 # face = get_largest_face_img(orgimg, boxes)
                 face = get_faces(orgimg, boxes)
                 

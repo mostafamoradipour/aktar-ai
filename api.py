@@ -10,7 +10,7 @@ import json
 import os
 
 from service_ba.personSearch import searchEngine
-from service_cs.streamer import streamEngine, Streamer
+from service_cs.streamer import streamEngine
 from service_db.api_db import Database
 from service_db.sync import sync_negar
 
