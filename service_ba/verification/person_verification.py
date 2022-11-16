@@ -18,6 +18,7 @@ def linear_assignment(cost_matrix):
     x, y = linear_sum_assignment(cost_matrix)
     return np.array(list(zip(x, y)))
 
+
 def linear_assignment(cost_matrix):
   try:
     import lap
@@ -27,6 +28,7 @@ def linear_assignment(cost_matrix):
     from scipy.optimize import linear_sum_assignment
     x, y = linear_sum_assignment(cost_matrix)
     return np.array(list(zip(x, y)))
+
 
 class PersonVerifier(object):
     def __init__(self, cfg=None):
@@ -186,7 +188,6 @@ class PersonVerifier(object):
                 found_conf, query_id, num_queue = self.query_feature(norm_feat)
                 x1,y1, x2,y2 = person_boxes[bd_idx] 
                 intensity = np.mean(img_hsv[y1 : y2, x1 : x2, 2])
-
                 area = body.shape[1] * body.shape[0]
                 aspect_ratio = body.shape[0] / body.shape[1]
                 best_body_time_stamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
@@ -207,7 +208,6 @@ class PersonVerifier(object):
                     self.database.save_feature(body, norm_feat, face, area = area, aspect_ratio = aspect_ratio, id = self.id_counter, time_stamp = [best_body_time_stamp])
                     self.id_counter += 1
                     print(best_body_time_stamp)
-
                 else:
                     print(f"Find a detected person_{query_id} confidence: {found_conf}, {best_body_time_stamp}")
                     if found_conf > self.update_thres:
@@ -219,7 +219,6 @@ class PersonVerifier(object):
                             self.features[num_queue].put(temp_feature)
                             self.q_idx_best_person[num_queue] = 1
 
-
                         self.features[num_queue].put(norm_feat)
                         self.q_idx_best_person[num_queue] += 1
                         body_time_stamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
@@ -229,7 +228,7 @@ class PersonVerifier(object):
                             print("found face")
                         
                         # if area > self.areas[num_queue] and aspect_ratio > self.aspect_ratioes[num_queue] and intensity >= self.intensity_thresh: #or (self.faces[num_queue].shape[0]==1 and face.shape[0] > 1):
-                        print(intensity)
+                        print("intensity = ", intensity)
                         if area > self.areas[num_queue] and intensity >= self.intensity_thresh:
                             if self.faces[num_queue].shape[0]==1 or face.shape[0] > 1:
                                 self.faces[num_queue] = face
@@ -240,7 +239,5 @@ class PersonVerifier(object):
                             
                             self.database.update_feature(body, norm_feat, self.faces[num_queue] , area = area, aspect_ratio = aspect_ratio, id = query_id, time_stamp = self.time_stamps[num_queue])
                             self.q_idx_best_person[num_queue] = 1
-                        
-
                         else:
                             self.database.update_time(id =  query_id, time_stamp = self.time_stamps[num_queue])

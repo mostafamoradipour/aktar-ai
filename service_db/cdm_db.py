@@ -32,7 +32,6 @@ class Database():
                 areas.append(doc['area'])
                 aspect_ratioes.append(doc['aspect_ratio'])
                 time_stamps.append(doc['time'])
-
             id_counter = max([i['id'] for i in self.collection.find()]) + 1    
         except:
             pass
@@ -42,12 +41,9 @@ class Database():
         _, im_arr = cv2.imencode('.jpg', face)  # im_arr: image in Numpy one-dim array format.
         im_bytes = im_arr.tobytes()
         im_b64 = base64.b64encode(im_bytes).decode()
-
         # _, face_arr = cv2.imencode('.jpg', face_) 
         # face_bytes = face_arr.tobytes()
         # face_b64 = base64.b64encode(face_bytes).decode()
-
-
         record = {'id': id,
                   'face': im_b64,
                   'face_': face.tolist(),
@@ -61,12 +57,9 @@ class Database():
         _, im_arr = cv2.imencode('.jpg', face)  # im_arr: image in Numpy one-dim array format.
         im_bytes = im_arr.tobytes()
         im_b64 = base64.b64encode(im_bytes).decode()
-
         # _, face_arr = cv2.imencode('.jpg', face_) 
         # face_bytes = face_arr.tobytes()
         # face_b64 = base64.b64encode(face_bytes).decode()
-
-
         record = {'id': id,
                   'face': im_b64,
                   'face_': face.tolist(),
@@ -75,18 +68,18 @@ class Database():
                   'aspect_ratio': aspect_ratio,
                   'time': time_stamp}
 
-        filter = {'id': id}
+        _filter = {'id': id}
         update = { "$set": record}
-        self.collection.update_one(filter, update)
+        self.collection.update_one(_filter, update)
     
     def update_time(self, id, time_stamp):
         
         record = {'id': id,
                   'time': time_stamp}
 
-        filter = {'id': id}
+        _filter = {'id': id}
         update = { "$set": record}
-        self.collection.update_one(filter, update)
+        self.collection.update_one(_filter, update)
 
     def get_docs(self):
         docs = []

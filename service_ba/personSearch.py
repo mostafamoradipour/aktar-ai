@@ -6,7 +6,7 @@ from threading import Thread
 class searchEngine():
     def __init__(self, cfg):
         self.verifier = PersonVerifier(cfg)
-        self.cam_urls = []
+        self.cam_urls = None
         self.running = False
 
     def search(self):

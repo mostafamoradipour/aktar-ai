@@ -3,9 +3,10 @@ response_code:
   bad_request: 400
 
 email: mostafa.moradipoor73@gmail.com
+# email: alr.akbari@gmail.com
 # email: esi4@gmail.com
 
-cam:
+stream:
   mongodb:
     host: 0.0.0.0
     port: 27017
@@ -13,8 +14,8 @@ cam:
     collection: CAM
 
 cdm:
-  thresh: 0.8
-  intensity_thresh: 40
+  thresh: 0.83
+  intensity_thresh: 50
   update_threshold: 0.92
   iou_threshold_face_person: 0.01
   detection:

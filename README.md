@@ -24,11 +24,7 @@ Now, you can find the onnx model beside the pt model.
 
 Put the [pretrained weights](https://drive.google.com/file/d/19I-MZdctYKmVf3nu5Da3HS6KH5LBfdzG/view) of recognition model in `verification/extraction/weights` (Extract the zip file. The rocognition model is named "w600k_mbf.onnx")
 
-<h3>Then run the Aktar-Search API by running this command:</h3>
-
-`python api.py`
-
-<h3>Finally get and run the UI code by running these commands:</h3>
+<h3>Then get and install Aktar-UI by running these commands:</h3>
 
 `git clone git@github.com:YasharSL/Aktar.git UI`
 
@@ -36,6 +32,14 @@ Put the [pretrained weights](https://drive.google.com/file/d/19I-MZdctYKmVf3nu5D
 
 `git pull`
 
-`git checkout v0.2.1`
+`git checkout v0.2.2`
 
 `npm install`
+
+<h3>Finally start Aktar-DB, Aktar-AI, and Aktar-UI by running this commands:</h3>
+
+`sudo docker start <mongodb container name>`
+
+`./scripts/run_ai.sh`
+
+`./scritps/run_ui.sh`

@@ -4,16 +4,12 @@ import copy
 import cv2
 
 from .utils.general import check_img_size, non_max_suppression_person, scale_coords, xyxy2xywh
-from .utils.utils import get_box, letterbox, scale_coords_landmarks, get_objects, ignore_boxes
+from .utils.utils import get_box, letterbox, get_objects, ignore_boxes
 
 
 class PersonDetector(object):
     def __init__(self, cfg=None):
         super(PersonDetector, self).__init__()
-
-        # TODO: 1. to add onnx runtime.
-        #       2. to add openvino runtime for more efficiency on intel devices.
-
         self.img_size = cfg['img_size']
         self.conf_thres = cfg['conf_thres']
         self.iou_thres = cfg['iou_thres']
@@ -22,16 +18,10 @@ class PersonDetector(object):
         self.max_ratio = cfg['max_ratio']
         self.ltrb = [cfg['left_pad'], cfg['top_pad'],
                      cfg['right_pad'], cfg['bottom_pad']]
-
-        # device = 'cpu' if not torch.cuda.is_available() or cfg['device'] == 'cpu' else 'cuda:0'
-        # self.device = torch.device(device)
-        # self.model = attempt_load(cfg['weights'], map_location=self.device)
-
         _provider = ['CPUExecutionProvider'] if cfg['device'] == 'cpu' else ['CUDAExecutionProvider']
         self.session = onnxruntime.InferenceSession(cfg['weights'], providers=_provider)
         self.input_name = self.session.get_inputs()[0].name
         self.output_name = self.session.get_outputs()[0].name
-
 
     def detect_one(self, orgimg):
         assert orgimg is not None, "Image is None"
@@ -74,9 +64,6 @@ class PersonDetector(object):
                             ltrb = self.ltrb, min_area = self.min_area,
                             min_ratio = self.min_ratio, max_ratio = self.max_ratio) 
                             
-
-
-
         # Process detections
         for i, det in enumerate(pred):  # detections per image
             gn = np.array(orgimg.shape)[[1, 0, 1, 0]] # normalization gain whwh

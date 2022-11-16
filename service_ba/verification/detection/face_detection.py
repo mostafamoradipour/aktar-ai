@@ -4,24 +4,15 @@ import copy
 import cv2
 
 from .utils.general import check_img_size, non_max_suppression_face, scale_coords, xyxy2xywh
-from .utils.utils import get_box, get_largest_face_img, letterbox, scale_coords_landmarks, get_faces
+from .utils.utils import get_box, letterbox, get_faces
 
 
 class FaceDetector(object):
     def __init__(self, cfg=None):
         super(FaceDetector, self).__init__()
-
-        # TODO: 1. to add onnx runtime.
-        #       2. to add openvino runtime for more efficiency on intel devices.
-
         self.img_size = cfg['img_size']
         self.conf_thres = cfg['conf_thres']
         self.iou_thres = cfg['iou_thres']
-
-        # device = 'cpu' if not torch.cuda.is_available() or cfg['device'] == 'cpu' else 'cuda:0'
-        # self.device = torch.device(device)
-        # self.model = attempt_load(cfg['weights'], map_location=self.device)
-
         _provider = ['CPUExecutionProvider'] if cfg['device'] == 'cpu' else ['CUDAExecutionProvider']
         self.session = onnxruntime.InferenceSession(cfg['weights'], providers=_provider)
         self.input_name = self.session.get_inputs()[0].name
