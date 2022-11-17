@@ -54,7 +54,7 @@ class Database():
 
         record = {'id': id,
                   'best_body': im_b64,
-                  'best_body_1': body.tolist(),
+                  'best_body_1': im_b64,
                   'body_counter': 1,
                   'best_face': face.tolist(),
                   'best_face_1': face.tolist(),
@@ -67,31 +67,45 @@ class Database():
                   'time': time_stamp}
         self.collection.insert_one(record)
 
-    def update_body_feature(self, body, body_counter, body_norm_feat, body_area, body_aspect_ratio, id, time_stamp):
+    def update_body_feature(self, body, body_counter, body_norm_feat, body_area, body_aspect_ratio, id, time_stamp, method = None):
         _, im_arr = cv2.imencode('.jpg', body)  # im_arr: image in Numpy one-dim array format.
         im_bytes = im_arr.tobytes()
         im_b64 = base64.b64encode(im_bytes).decode()
 
-
         record = {'id': id,
                   'best_body': im_b64,
-                  f'best_body_{body_counter}': body.tolist(),
+                  f'best_body_{body_counter}': im_b64,
                   'body_counter': body_counter,
                   'body_feature': body_norm_feat.tolist(),
                   'body_area': body_area,
                   'body_aspect_ratio': body_aspect_ratio,\
                   'time': time_stamp}
 
-        filter = {'id': id}
-        update = { "$set": record}
-        self.collection.update_one(filter, update)
+        if method == 'save':
+            self.collection.insert_one(record)
+
+        else:
+            filter = {'id': id}
+            update = { "$set": record}
+            self.collection.update_one(filter, update)
 
     def update_face(self, face, face_counter, face_area, face_aspect_ratio, id):
-        record = {'id': id,
-                  f'best_face_{face_counter}': face.tolist(),
-                  'face_counter': face_counter,
-                  'face_area': face_area,
-                  'face_aspect_ratio': face_aspect_ratio}
+        if face.shape[0] > 1:
+            _, im_arr = cv2.imencode('.jpg', face)  # im_arr: image in Numpy one-dim array format.
+            im_bytes = im_arr.tobytes()
+            im_b64 = base64.b64encode(im_bytes).decode()
+
+            record = {'best_face': im_b64,
+                      f'best_face_{face_counter}': im_b64,
+                      'face_counter': face_counter,
+                      'face_area': face_area,
+                      'face_aspect_ratio': face_aspect_ratio}
+        
+        else:
+            record = {'best_face': None,
+                      'face_counter': face_counter,
+                      'face_area': face_area,
+                      'face_aspect_ratio': face_aspect_ratio}
 
         filter = {'id': id}
         update = { "$set": record}

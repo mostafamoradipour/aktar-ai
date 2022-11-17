@@ -24,8 +24,10 @@ class PersonVerifier(object):
         self.query_feat = None
         self.thresh = cfg['thresh']
         self.update_thres = cfg['update_threshold']
+        self.update_ignore = cfg['update_ignore']
         self.iou_threshold_face_person = cfg['iou_threshold_face_person']
         self.intensity_thresh = cfg['intensity_thresh']
+        self.save_with_face = cfg['save_with_face']
         self.competetive_body_ratio = cfg['competetive_body_ratio']
         self.competetive_body_area = cfg['competetive_body_area']
         self.competetive_body_intensity = cfg['competetive_body_intensity']
@@ -49,9 +51,7 @@ class PersonVerifier(object):
             self.q_idx_best_person = [1 for i in range(len(self.ids))]
         else:
             self.q_idx_best_person = []
-        self.counter = 0
 
-        self.count = 0
     
     def get_confidence(self, queue_features, norm_feat):
         '''
@@ -201,7 +201,7 @@ class PersonVerifier(object):
 
 
                 if not found_conf:
-                    print(f"Find a new person_{query_id}")
+                    print(f"Find a new person_{self.id_counter}")
                     new_feat  = np.expand_dims(norm_feat, 0)
                     q = Queue(maxsize = self.database.queue_size)
                     q.put(norm_feat)
@@ -214,6 +214,9 @@ class PersonVerifier(object):
                     self.q_idx_best_person.append(1)
                     best_body_time_stamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
                     self.time_stamps.append([best_body_time_stamp])
+                    
+                    self.database.update_body_feature(body, 1, norm_feat, bd_area, bd_aspect_ratio, 
+                                                        id = self.id_counter, time_stamp = [best_body_time_stamp], method = "save")
                     if fa_area == 0:
                         self.face_count.append(0)
                         face_count = 0
@@ -222,53 +225,58 @@ class PersonVerifier(object):
                         face_count = 1
                     self.fa_areas.append(fa_area)
                     self.fa_aspect_ratioes.append(fa_aspect_ratio)
-                    self.database.save_feature(body, norm_feat, bd_area, bd_aspect_ratio, face, 
-                                              face_count, fa_area, fa_aspect_ratio,  
-                                               id = self.id_counter, time_stamp = [best_body_time_stamp])
+
+                    self.database.update_face(face, face_count, fa_area, fa_aspect_ratio, id = self.id_counter)
+
                     self.id_counter += 1
                     print(best_body_time_stamp)
 
 
                 else:
                     print(f"Find a detected person_{query_id} confidence: {found_conf}, {best_body_time_stamp}")
+                    # if face is found and pass Conditions, will be update face in database 
                     if  face.shape[0] > 1:
                         upadte_by_area = fa_area > self.fa_areas[num_queue] if self.competetive_face_area else True
                         upadte_by_ratio = fa_aspect_ratio < self.fa_aspect_ratioes[num_queue] if  self.competetive_face_ratio else True
 
                         if upadte_by_area and upadte_by_ratio:
                             self.face_count[num_queue] += 1
+                            self.fa_areas[num_queue] = fa_area
+                            self.fa_aspect_ratioes[num_queue] = fa_aspect_ratio
+                            self.faces[num_queue] = face
                             self.database.update_face(face, self.face_count[num_queue], fa_area,fa_aspect_ratio, id = query_id)
 
-                        cv2.imwrite(f"save/a_{self.count}.jpg", face)
+                        # cv2.imwrite(f"save/a_{self.count}.jpg", face)
                         print("found face")
-                        self.count +=1
                         
 
-                    # if found_conf > self.update_thres and found_conf<0.975:
-                    if found_conf > self.update_thres:
-                        if self.features[num_queue].qsize() == self.database.queue_size:
-                            temp_feature = self.features[num_queue].get()
-            
-                        if self.q_idx_best_person[num_queue] == self.database.queue_size:
-                            self.features[num_queue].get()
-                            self.features[num_queue].put(temp_feature)
-                            self.q_idx_best_person[num_queue] = 1
+                    if found_conf > self.update_thres:                        
+                        ## add feature in queue if body's confidence is between second threshold and 0.95 
+                        if found_conf < self.update_ignore:
+                            ## delete feature from front of queue by FIFO policy
+                            if self.features[num_queue].qsize() == self.database.queue_size:
+                                temp_feature = self.features[num_queue].get()
 
+                            ## recovery best appereance in queue if it has deleted from queue 
+                            if self.q_idx_best_person[num_queue] == self.database.queue_size:
+                                self.features[num_queue].get()
+                                self.features[num_queue].put(temp_feature)
+                                self.q_idx_best_person[num_queue] = 1
 
-                        self.features[num_queue].put(norm_feat)
-                        self.q_idx_best_person[num_queue] += 1
+                            self.features[num_queue].put(norm_feat)
+                            self.q_idx_best_person[num_queue] += 1
+
                         body_time_stamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
                         self.time_stamps[num_queue].append(body_time_stamp)
                         
-                        
+                        ## Update database  if best appereance is found
                         upadte_by_area = bd_area > self.bd_areas[num_queue] if self.competetive_body_area else True
                         upadte_by_ratio = bd_aspect_ratio > self.bd_aspect_ratioes[num_queue] if  self.competetive_body_ratio else True
                         upadte_by_intensity = intensity >= self.intensity_thresh  if  self.competetive_body_intensity else True
+                        upadte_by_face = fa_area > 0  if  self.save_with_face else True
                        
 
-                        if upadte_by_area and upadte_by_ratio and upadte_by_intensity:
-                            if self.faces[num_queue].shape[0]==1 or face.shape[0] > 1:
-                                self.faces[num_queue] = face
+                        if upadte_by_area and upadte_by_ratio and upadte_by_intensity and upadte_by_face:
 
                             print(f"Update person[{query_id}], ")
                             self.bd_areas[num_queue] = bd_area
