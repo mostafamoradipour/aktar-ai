@@ -28,9 +28,9 @@ cdm:
     img_size: 640
     conf_thres: 0.7
     iou_thres: 0.4
-    min_area: 1000
-    min_ratio: 1.7
-    max_ratio: 2.5
+    min_area: 1600
+    min_ratio: 2
+    max_ratio: 3
     left_pad: 30
     top_pad: 10
     right_pad: 20
@@ -46,9 +46,9 @@ cdm:
       img_size: 640
       conf_thres: 0.4
       iou_thres: 0.2
-      min_area: 200
+      min_area: 800
       min_ratio: 1
-      max_ratio: 4
+      max_ratio: 2
       left_pad: 0
       top_pad: 0
       right_pad: 0

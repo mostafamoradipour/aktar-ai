@@ -32,7 +32,7 @@ Put the [pretrained weights](https://drive.google.com/file/d/19I-MZdctYKmVf3nu5D
 
 `git pull`
 
-`git checkout v0.2.2`
+`git checkout v0.2.3`
 
 `npm install`
 

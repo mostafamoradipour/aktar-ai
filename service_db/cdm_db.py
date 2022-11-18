@@ -48,15 +48,18 @@ class Database():
         return ids, body_att, face_att, time_stamps, id_counter
 
     def save_feature(self, body, body_norm_feat, body_area, body_aspect_ratio,  face, face_counter, face_area, face_aspect_ratio, id, time_stamp):
-        _, im_arr = cv2.imencode('.jpg', body)  # im_arr: image in Numpy one-dim array format.
-        im_bytes = im_arr.tobytes()
-        im_b64 = base64.b64encode(im_bytes).decode()
+        _, body_arr = cv2.imencode('.jpg', body)
+        body_bytes = body_arr.tobytes()
+        body_b64 = base64.b64encode(body_bytes).decode()
+        _, face_arr = cv2.imencode('.jpg', face)
+        face_bytes = face_arr.tobytes()
+        face_b64 = base64.b64encode(face_bytes).decode()
         record = {'id': id,
-                  'best_body': im_b64,
-                  'best_body_1': body.tolist(),
+                  'best_body': body_b64,
+                  'best_body_1': body_b64,
                   'body_counter': 1,
-                  'best_face': face.tolist(),
-                  'best_face_1': face.tolist(),
+                  'best_face': face_b64,
+                  'best_face_1': face_b64,
                   'face_counter': face_counter,
                   'body_feature': body_norm_feat.tolist(),
                   'body_area': body_area,
@@ -67,40 +70,38 @@ class Database():
         self.collection.insert_one(record)
 
     def update_body_feature(self, body, body_counter, body_norm_feat, body_area, body_aspect_ratio, id, time_stamp):
-        _, im_arr = cv2.imencode('.jpg', body)  # im_arr: image in Numpy one-dim array format.
-        im_bytes = im_arr.tobytes()
-        im_b64 = base64.b64encode(im_bytes).decode()
-
-
+        _, body_arr = cv2.imencode('.jpg', body)
+        body_bytes = body_arr.tobytes()
+        body_b64 = base64.b64encode(body_bytes).decode()
         record = {'id': id,
-                  'best_body': im_b64,
-                  f'best_body_{body_counter}': body.tolist(),
+                  'best_body': body_b64,
+                  f'best_body_{body_counter}': body_b64,
                   'body_counter': body_counter,
                   'body_feature': body_norm_feat.tolist(),
                   'body_area': body_area,
                   'body_aspect_ratio': body_aspect_ratio,\
                   'time': time_stamp}
-
         _filter = {'id': id}
         update = { "$set": record}
-        self.collection.update_one(filter, update)
+        self.collection.update_one(_filter, update)
 
     def update_face(self, face, face_counter, face_area, face_aspect_ratio, id):
+        _, face_arr = cv2.imencode('.jpg', face)
+        face_bytes = face_arr.tobytes()
+        face_b64 = base64.b64encode(face_bytes).decode()
         record = {'id': id,
-                  f'best_face_{face_counter}': face.tolist(),
+                  f'best_face': face_b64,
+                  f'best_face_{face_counter}': face_b64,
                   'face_counter': face_counter,
                   'face_area': face_area,
                   'face_aspect_ratio': face_aspect_ratio}
-
-        filter = {'id': id}
+        _filter = {'id': id}
         update = { "$set": record}
-        self.collection.update_one(filter, update)
+        self.collection.update_one(_filter, update)
 
     def update_time(self, id, time_stamp):
-        
         record = {'id': id,
                   'time': time_stamp}
-
         _filter = {'id': id}
         update = { "$set": record}
         self.collection.update_one(_filter, update)
