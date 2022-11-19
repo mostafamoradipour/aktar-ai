@@ -39,7 +39,7 @@ class streamEngine():
                         frame = np.vstack((frame, frame1))
             if ret0:
                 frame = resize(frame, width=1800)
-                cv2.imshow("Aktar-C", frame)
+                cv2.imshow("Aktar-Stream", frame)
             if cv2.waitKey(1) == ord('q'):
                 self.running = False
                 break
@@ -99,7 +99,7 @@ def Streamer(inputs):
                     frame = np.vstack((frame, frame1))
         if ret0:
             frame = resize(frame, width=1800)
-            cv2.imshow("Aktar-C", frame)
+            cv2.imshow("Aktar-Stream", frame)
         if cv2.waitKey(1) == ord('q'):
             break
         # if cv2.waitKey(1) and cv2.getWindowProperty("Aktar-C",cv2.WND_PROP_VISIBLE) < 1:
