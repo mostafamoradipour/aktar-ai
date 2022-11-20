@@ -14,8 +14,8 @@ stream:
     collection: CAM
 
 cdm:
-  thresh: 0.83
-  intensity_thresh: 50
+  thresh: 0.80
+  intensity_thresh: 80
   update_threshold: 0.92
   iou_threshold_face_person: 0.01
   competetive_body_ratio: False

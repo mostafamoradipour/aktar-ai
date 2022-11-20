@@ -30,7 +30,6 @@ def sync_negar(cam_col, cdm_col, email):
             bodies = [person[f"best_body_{count+1}"] for count in range(person["body_counter"])]
             times = person["time"]
             if len(faces) > g_c[_id]["face"] or len(bodies) > g_c[_id]["body"] or len(times) > g_c[_id]["time"]:
-                faces = [person[f"best_face_{count+1}"] for count in range(person["face_counter"])]
                 public_person = {"id": _id, "faces": faces[g_c[_id]["face"]:],
                                 "bodies": bodies[g_c[_id]["body"]:], "times": times[g_c[_id]["time"]:]}
                 g_c[_id]["face"] += len(faces)
@@ -40,7 +39,6 @@ def sync_negar(cam_col, cdm_col, email):
         if len(public_persons):
             while True:
                 record =  {"email": email, "persons": public_persons}
-                print(record)
                 res = requests.post(url=cdm_url, json=record)
                 if res.status_code == 200:
                     print("CDM", res.status_code)

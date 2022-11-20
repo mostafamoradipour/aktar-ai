@@ -70,10 +70,11 @@ async def sream_serve():
 # stream_service_trd = Thread(target=asyncio.run, args=[sream_serve()])
 # stream_service_trd.start()
 stream_engine = streamEngine()
+cdm_engine = searchEngine(cfg["cdm"])
 
 
 async def cdm(websocket):
-    cdm_engine = searchEngine(cfg["cdm"])
+    # cdm_engine = searchEngine(cfg["cdm"])
     async for message in websocket:
         message = json.loads(message)
         command = message["command"]
@@ -120,7 +121,46 @@ def get_cameras():
 def customer_data_manager():
     try:
         persons = cdm_col.get_docs()
-        return jsonify({"persons": persons}), response_code["ok"]
+        public_persons = []
+        for person in persons:
+            public_person = {"id": person["id"], "best_body": person[f'best_body_{person["body_counter"]}']}
+            public_persons.append(public_person)
+        return jsonify({"persons": public_persons}), response_code["ok"]
+    except:
+        return {"message": "Failed to load the customer info from database"}, response_code["bad_request"]
+
+
+@app.route("/cdm_status", methods=["GET"])
+def cdm_status():
+    try:
+        return jsonify({"cdm_status": cdm_engine.running}), response_code["ok"]
+    except:
+        return {"message": "Failed to load the customer info from database"}, response_code["bad_request"] 
+
+
+@app.route("/profile", methods=["POST"])
+def profile_manager():
+    req = request.get_json()
+    _id = req["id"]
+    try:
+        persons = cdm_col.get_docs()
+        for person in persons:
+            if person["id"] == _id:
+                faces = [person[f"best_face_{count+1}"] for count in range(person["face_counter"])]
+                bodies = [person[f"best_body_{count+1}"] for count in range(person["body_counter"])]
+                times = person["time"]
+                public_person = {"id": _id, "faces": faces, "bodies": bodies, "times": times}
+                break
+        return jsonify({"persons": public_person}), response_code["ok"]
+    except:
+        return {"message": "Failed to load the customer info from database"}, response_code["bad_request"]
+
+
+@app.route("/insight", methods=["GET"])
+def insight_manager():
+    try:
+        persons = cdm_col.get_docs()
+        return jsonify({"person_count": len(persons)}), response_code["ok"]
     except:
         return {"message": "Failed to load the customer info from database"}, response_code["bad_request"]
 
