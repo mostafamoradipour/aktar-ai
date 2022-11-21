@@ -14,32 +14,36 @@ stream:
     collection: CAM
 
 cdm:
-  thresh: 0.80
-  intensity_thresh: 80
+  body_thresh: 0.8
+  face_thresh: 0.8
+  intensity_thresh: 40
   update_threshold: 0.92
+  update_ignore: 0.95
   iou_threshold_face_person: 0.01
   competetive_body_ratio: False
   competetive_body_area: True
   competetive_body_intensity: True
+  save_with_face: True
   competetive_face_ratio: False
   competetive_face_area: True
-  detection:
+  body_detection:
     device: 'gpu'
     img_size: 640
-    conf_thres: 0.7
+    conf_thres: 0.9
     iou_thres: 0.4
-    min_area: 1600
-    min_ratio: 2
+    min_area: 1000
+    min_ratio: 1.7
     max_ratio: 3
-    left_pad: 30
-    top_pad: 10
-    right_pad: 20
-    bottom_pad: 10
+    left_pad: 0
+    top_pad: 0
+    right_pad: 0
+    bottom_pad: 0
     weights: service_ba/verification/detection/weights/crowdhuman_yolov5m.onnx
 
-  extraction:
+  body_extraction:
     device: gpu
     weights: service_ba/verification/extraction/weights/osnet_x0_25_msmt17.onnx
+    input_size: [128, 256]
 
   face_detection:
       device: 'gpu'
@@ -54,6 +58,11 @@ cdm:
       right_pad: 0
       bottom_pad: 0
       weights: 'service_ba/verification/detection/weights/yolov5n-face.onnx'
+
+  face_extraction:
+    device: gpu
+    weights: 'service_ba/verification/extraction/weights/w600k_mbf.onnx'
+    input_size: [112, 112]
 
   mongodb:
     host: 0.0.0.0

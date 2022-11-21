@@ -20,6 +20,7 @@ class FeatureExtractor(object):
         self.session = onnxruntime.InferenceSession(cfg['weights'], providers=_provider)
         self.input_name = self.session.get_inputs()[0].name
         self.output_name = self.session.get_outputs()[0].name
+        self.input_size = tuple(cfg['input_size'])
 
     def extract_one(self, img):
         '''
@@ -28,7 +29,7 @@ class FeatureExtractor(object):
             2. resize to 112 * 112
             3. extract feature and return it.
         '''
-        img = cv2.resize(img, (128, 256)) / 127.5 - 1
+        img = cv2.resize(img, self.input_size) / 127.5 - 1
         input_data = np.expand_dims(
             img.transpose((2, 0, 1)), 0).astype('float32')
         feat = self.session.run([self.output_name], {self.input_name: input_data})[0]
