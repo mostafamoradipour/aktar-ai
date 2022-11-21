@@ -14,7 +14,8 @@ class Database():
 
     def load_feature(self):
         body_features = dict()
-        faces = []
+        face_features = dict()
+        # faces = []
         ids = []
         body_areas = []
         body_aspect_ratioes = []
@@ -31,41 +32,30 @@ class Database():
                 q.put((np.array(doc['body_feature'])))
                 body_features[index] = q
                 body_counters.append(doc['body_counter'])
+                body_areas.append(doc['body_area'])
+                body_aspect_ratioes.append(doc['body_aspect_ratio'])
+                ids.append(doc['id'])
+                fa = Queue(maxsize = self.queue_size)
+                fa_feat = doc['face_feature']
+                time_stamps.append(doc['time'])
+                
+
+                if fa_feat != None:
+                    fa.put((np.array(doc['body_feature'])))
+
+                face_features[index] = fa
                 face_counters.append(doc['face_counter'])
                 face_areas.append(doc['face_area'])
                 face_aspect_ratioes.append(doc['face_aspect_ratio'])
-                faces.append(np.array(doc['best_face']))
-                ids.append(doc['id'])
-                body_areas.append(doc['body_area'])
-                body_aspect_ratioes.append(doc['body_aspect_ratio'])
-                time_stamps.append(doc['time'])
+                # faces.append(np.array(doc['best_face']))
+
 
             id_counter = max([i['id'] for i in self.collection.find()]) + 1    
         except:
             pass
-        face_att = faces, face_counters, face_areas, face_aspect_ratioes
+        face_att = face_features, face_counters, face_areas, face_aspect_ratioes
         body_att = body_features, body_counters, body_areas, body_aspect_ratioes
         return ids, body_att, face_att, time_stamps, id_counter
-
-    def save_feature(self, body, body_norm_feat, body_area, body_aspect_ratio,  face, face_counter, face_area, face_aspect_ratio, id, time_stamp):
-        _, im_arr = cv2.imencode('.jpg', body)  # im_arr: image in Numpy one-dim array format.
-        im_bytes = im_arr.tobytes()
-        im_b64 = base64.b64encode(im_bytes).decode()
-
-        record = {'id': id,
-                  'best_body': im_b64,
-                  'best_body_1': im_b64,
-                  'body_counter': 1,
-                  'best_face': face.tolist(),
-                  'best_face_1': face.tolist(),
-                  'face_counter': face_counter,
-                  'body_feature': body_norm_feat.tolist(),
-                  'body_area': body_area,
-                  'body_aspect_ratio': body_aspect_ratio,
-                  'face_area': face_area,
-                  'face_aspect_ratio': face_aspect_ratio,
-                  'time': time_stamp}
-        self.collection.insert_one(record)
 
     def update_body_feature(self, body, body_counter, body_norm_feat, body_area, body_aspect_ratio, id, time_stamp, method = None):
         _, im_arr = cv2.imencode('.jpg', body)  # im_arr: image in Numpy one-dim array format.
@@ -89,7 +79,7 @@ class Database():
             update = { "$set": record}
             self.collection.update_one(filter, update)
 
-    def update_face(self, face, face_counter, face_area, face_aspect_ratio, id):
+    def update_face(self, face, face_counter, face_norm_feature, face_area, face_aspect_ratio, id):
         if face.shape[0] > 1:
             _, im_arr = cv2.imencode('.jpg', face)  # im_arr: image in Numpy one-dim array format.
             im_bytes = im_arr.tobytes()
@@ -98,11 +88,13 @@ class Database():
             record = {'best_face': im_b64,
                       f'best_face_{face_counter}': im_b64,
                       'face_counter': face_counter,
+                      'face_feature': face_norm_feature.tolist(),
                       'face_area': face_area,
                       'face_aspect_ratio': face_aspect_ratio}
         
         else:
             record = {'best_face': None,
+                      'face_feature': face_norm_feature,
                       'face_counter': face_counter,
                       'face_area': face_area,
                       'face_aspect_ratio': face_aspect_ratio}

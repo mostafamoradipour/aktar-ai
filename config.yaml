@@ -12,7 +12,8 @@ cam:
     collection: CAM
 
 cdm:
-  thresh: 0.84
+  body_thresh: 0.84
+  face_thresh: 0.8
   intensity_thresh: 40
   update_threshold: 0.92
   update_ignore: 0.95
@@ -23,10 +24,10 @@ cdm:
   save_with_face: True
   competetive_face_ratio: False
   competetive_face_area: True
-  detection:
+  body_detection:
     device: 'gpu'
     img_size: 640
-    conf_thres: 0.6
+    conf_thres: 0.8
     iou_thres: 0.4
     min_area: 1000
     min_ratio: 1.3
@@ -38,10 +39,11 @@ cdm:
     # weights: 'cdm/verification/detection/weights/yolov5n-face.onnx'
     weights: service_ba/verification/detection/weights/crowdhuman_yolov5m.onnx
 
-  extraction:
+  body_extraction:
     device: gpu
     # weights: 'cdm/verification/extraction/weights/webface_r50.onnx'
     weights: service_ba/verification/extraction/weights/osnet_ain_ms_d_c.onnx
+    input_size: [128, 256]
 
   face_detection:
       device: 'gpu'
@@ -57,10 +59,16 @@ cdm:
       bottom_pad: 0
       weights: 'service_ba/verification/detection/weights/yolov5n-face.onnx'
 
+  face_extraction:
+    device: gpu
+    weights: 'service_ba/verification/extraction/weights/w600k_mbf.onnx'
+    input_size: [112, 112]
+
+
   mongodb:
     host: 0.0.0.0
     port: 27017
     database: Aktar
-    collection: Nov-17-1401
+    collection: Nov-20-1406
     queue_maxsize: 10
 
