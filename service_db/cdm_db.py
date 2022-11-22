@@ -104,6 +104,11 @@ class Database():
         update = { "$set": record}
         self.collection.update_one(_filter, update)
 
+    def delete_item(self, id):
+        _filter = {'id': id}
+        self.collection.delete_one(_filter)
+
+
     def update_time(self, id, time_stamp):
         record = {'id': id,
                   'time': time_stamp}

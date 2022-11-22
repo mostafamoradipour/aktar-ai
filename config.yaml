@@ -15,25 +15,26 @@ stream:
 
 cdm:
   body_thresh: 0.83
-  face_thresh: 0.3
-  intensity_thresh: 40
+  face_thresh: 0.55
+  # intensity_thresh: 40
   update_threshold: 0.92
   update_ignore: 0.95
   iou_threshold_face_person: 0.01
   competetive_body_ratio: False
   competetive_body_area: True
-  competetive_body_intensity: True
+  # competetive_body_intensity: True
   save_with_face: True
   competetive_face_ratio: False
   competetive_face_area: True
   body_detection:
     device: 'gpu'
     img_size: 640
-    conf_thres: 0.7
+    conf_thres: 0.8
     iou_thres: 0.4
     min_area: 1000
     min_ratio: 1.2
     max_ratio: 4
+    min_intensity: 40
     left_pad: 0
     top_pad: 0
     right_pad: 0
@@ -53,6 +54,7 @@ cdm:
       min_area: 800
       min_ratio: 1
       max_ratio: 2
+      min_intensity: 40
       left_pad: 0
       top_pad: 0
       right_pad: 0

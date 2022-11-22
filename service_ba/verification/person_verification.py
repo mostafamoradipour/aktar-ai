@@ -39,11 +39,11 @@ class PersonVerifier(object):
         self.update_thres = cfg['update_threshold']
         self.update_ignore = cfg['update_ignore']
         self.iou_threshold_face_person = cfg['iou_threshold_face_person']
-        self.intensity_thresh = cfg['intensity_thresh']
+        # self.intensity_thresh = cfg['intensity_thresh']
         self.save_with_face = cfg['save_with_face']
         self.competetive_body_ratio = cfg['competetive_body_ratio']
         self.competetive_body_area = cfg['competetive_body_area']
-        self.competetive_body_intensity = cfg['competetive_body_intensity']
+        # self.competetive_body_intensity = cfg['competetive_body_intensity']
         self.competetive_face_ratio = cfg['competetive_face_ratio']
         self.competetive_face_area = cfg['competetive_face_area']
 
@@ -102,6 +102,24 @@ class PersonVerifier(object):
         return(o) 
         
 
+    def merge_id(self, face_query_id, face_num_queue, bd_query_id,  bd_num_queue):
+        print(f"Person_{bd_query_id} will be merged  to person_{face_query_id} and will be deleted from database ")
+        del self.bd_count[bd_num_queue]
+        del self.bd_areas[bd_num_queue]
+        del self.bd_aspect_ratioes[bd_num_queue]
+        del self.time_stamps[bd_num_queue]
+        del self.bd_features[bd_query_id]
+        del self.q_idx_best_person[bd_num_queue]
+        del self.ids[bd_num_queue]
+        del self.q_idx_best_face[bd_num_queue]
+        del self.face_features[bd_query_id]
+        del self.fa_areas[bd_num_queue]
+        del self.fa_aspect_ratioes[bd_num_queue]
+        del self.face_count[bd_num_queue]
+
+        self.database.delete_item(id=bd_query_id)
+
+
 
     def query_feature(self, norm_feat, features, thre_conf):
         found_conf = False
@@ -145,8 +163,8 @@ class PersonVerifier(object):
         if len(img.shape) != 3:
             print('Unknown Image Type !!!')
             return False
-        person, person_boxes = self.body_detector.detect_one(img)
-        faces, face_boxes = self.face_detector.detect_one(img)
+        person, person_boxes = self.body_detector.detect_one(img, img_hsv)
+        faces, face_boxes = self.face_detector.detect_one(img, img_hsv)
 
         matched_indices = np.empty(shape=(0,2))
         if face_boxes != None and person_boxes != None:
@@ -168,7 +186,7 @@ class PersonVerifier(object):
                 norm_bd_feat = bd_feat / norm(bd_feat, axis=1)
                 bd_found_conf, bd_query_id, bd_num_queue = self.query_feature(norm_bd_feat, self.bd_features, self.body_thresh)
                 x1,y1, x2,y2 = person_boxes[bd_idx] 
-                intensity = np.mean(img_hsv[y1 : y2, x1 : x2, 2])
+                # intensity = np.mean(img_hsv[y1 : y2, x1 : x2, 2])
                 bd_area = body.shape[1] * body.shape[0]
                 bd_aspect_ratio = body.shape[0] / body.shape[1]
                 best_body_time_stamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
@@ -230,6 +248,9 @@ class PersonVerifier(object):
                         force_update = True
                         query_id = face_query_id
                         num_queue = face_num_queue
+                        if bd_query_id != 'unknown':
+                            self.merge_id(face_query_id, face_num_queue, bd_query_id, bd_num_queue)
+                            num_queue = num_queue - 1 if num_queue > bd_num_queue else num_queue
                         
                     else:
                         print("Matching by person reid")
@@ -252,16 +273,16 @@ class PersonVerifier(object):
 
                         if face_found_conf < self.update_ignore:
                             ## delete feature from front of queue by FIFO policy
-                            if self.face_features[num_queue].qsize() == self.database.queue_size:
-                                temp_feature = self.face_features[num_queue].get()
+                            if self.face_features[query_id].qsize() == self.database.queue_size:
+                                temp_feature = self.face_features[query_id].get()
 
                             ## recovery best appereance in queue if it has deleted from queue 
                             if self.q_idx_best_face[num_queue] == self.database.queue_size:
-                                self.face_features[num_queue].get()
-                                self.face_features[num_queue].put(temp_feature)
+                                self.face_features[query_id].get()
+                                self.face_features[query_id].put(temp_feature)
                                 self.q_idx_best_face[num_queue] = 1
 
-                            self.face_features[num_queue].put(norm_face_feat)
+                            self.face_features[query_id].put(norm_face_feat)
                             self.q_idx_best_face[num_queue] += 1
                         print("found face")
                         
@@ -271,16 +292,16 @@ class PersonVerifier(object):
                         ## add feature in queue if body's confidence is between second threshold and 0.95 
                         if bd_found_conf < self.update_ignore:
                             ## delete feature from front of queue by FIFO policy
-                            if self.bd_features[num_queue].qsize() == self.database.queue_size:
-                                temp_feature = self.bd_features[num_queue].get()
+                            if self.bd_features[query_id].qsize() == self.database.queue_size:
+                                temp_feature = self.bd_features[query_id].get()
 
                             ## recovery best appereance in queue if it has deleted from queue 
                             if self.q_idx_best_person[num_queue] == self.database.queue_size:
-                                self.bd_features[num_queue].get()
-                                self.bd_features[num_queue].put(temp_feature)
+                                self.bd_features[query_id].get()
+                                self.bd_features[query_id].put(temp_feature)
                                 self.q_idx_best_person[num_queue] = 1
 
-                            self.bd_features[num_queue].put(norm_bd_feat)
+                            self.bd_features[query_id].put(norm_bd_feat)
                             self.q_idx_best_person[num_queue] += 1
 
                         body_time_stamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
@@ -289,13 +310,12 @@ class PersonVerifier(object):
                         ## Update database  if best appereance is found
                         upadte_by_area = bd_area > self.bd_areas[num_queue] if self.competetive_body_area else True
                         upadte_by_ratio = bd_aspect_ratio > self.bd_aspect_ratioes[num_queue] if  self.competetive_body_ratio else True
-                        upadte_by_intensity = intensity >= self.intensity_thresh  if  self.competetive_body_intensity else True
+                        # upadte_by_intensity = intensity >= self.intensity_thresh  if  self.competetive_body_intensity else True
                         upadte_by_face = fa_area > 0  if  self.save_with_face else True
 
-                        if force_update or upadte_by_face:
-                            print("fd")
 
-                        if (upadte_by_area and upadte_by_ratio and upadte_by_intensity and upadte_by_face) or force_update:
+                        # if (upadte_by_area and upadte_by_ratio and upadte_by_intensity and upadte_by_face) or force_update:
+                        if (upadte_by_area and upadte_by_ratio and upadte_by_face) or force_update:
                             print(f"Update person[{query_id}], ")
                             self.bd_areas[num_queue] = bd_area
                             self.bd_aspect_ratioes[num_queue] = bd_aspect_ratio

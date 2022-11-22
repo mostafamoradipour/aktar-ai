@@ -16,6 +16,7 @@ class PersonDetector(object):
         self.min_area = cfg['min_area']
         self.min_ratio = cfg['min_ratio']
         self.max_ratio = cfg['max_ratio']
+        self.min_intensity = cfg['min_intensity']
         self.ltrb = [cfg['left_pad'], cfg['top_pad'],
                      cfg['right_pad'], cfg['bottom_pad']]
         _provider = ['CPUExecutionProvider'] if cfg['device'] == 'cpu' else ['CUDAExecutionProvider']
@@ -23,7 +24,7 @@ class PersonDetector(object):
         self.input_name = self.session.get_inputs()[0].name
         self.output_name = self.session.get_outputs()[0].name
 
-    def detect_one(self, orgimg):
+    def detect_one(self, orgimg, img_hsv):
         assert orgimg is not None, "Image is None"
         assert orgimg.shape[2] == 3, "Unknown Image Type"
 
@@ -60,9 +61,9 @@ class PersonDetector(object):
         pred = non_max_suppression_person(pred, self.conf_thres, self.iou_thres)
 
         # Filter boxes by aspect ratio and area and margin
-        pred = ignore_boxes(boxes = pred, img_shape = img.shape[2:], 
+        pred = ignore_boxes(img_hsv , boxes = pred, img_shape = img.shape[2:], 
                             ltrb = self.ltrb, min_area = self.min_area,
-                            min_ratio = self.min_ratio, max_ratio = self.max_ratio) 
+                            min_ratio = self.min_ratio, max_ratio = self.max_ratio, min_intensity = self.min_intensity) 
                             
         # Process detections
         for i, det in enumerate(pred):  # detections per image
