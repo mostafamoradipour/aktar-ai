@@ -230,10 +230,12 @@ class PersonVerifier(object):
                         force_update = True
                         query_id = face_query_id
                         num_queue = face_num_queue
+                        
                     else:
                         print("Matching by person reid")
                         query_id = bd_query_id
                         num_queue = bd_num_queue
+                        force_update = self.q_idx_best_face[num_queue] == 0 and face.shape[0] > 1  if  self.save_with_face else  False
 
                     print(f"Find a detected person_{query_id} confidence: {bd_found_conf}, {best_body_time_stamp}")
                     # if face is found and pass Conditions, will be update face in database 
@@ -263,7 +265,7 @@ class PersonVerifier(object):
                             self.q_idx_best_face[num_queue] += 1
                         print("found face")
                         
-                    force_update = self.q_idx_best_face[num_queue] == 1 and face.shape[0] > 1  if  self.save_with_face else  False
+                    
 
                     if bd_found_conf > self.update_thres or force_update:                        
                         ## add feature in queue if body's confidence is between second threshold and 0.95 

@@ -14,7 +14,7 @@ stream:
     collection: CAM
 
 cdm:
-  body_thresh: 0.8
+  body_thresh: 0.83
   face_thresh: 0.3
   intensity_thresh: 40
   update_threshold: 0.92
@@ -29,11 +29,11 @@ cdm:
   body_detection:
     device: 'gpu'
     img_size: 640
-    conf_thres: 0.9
+    conf_thres: 0.7
     iou_thres: 0.4
     min_area: 1000
-    min_ratio: 1.7
-    max_ratio: 3
+    min_ratio: 1.2
+    max_ratio: 4
     left_pad: 0
     top_pad: 0
     right_pad: 0
@@ -48,7 +48,7 @@ cdm:
   face_detection:
       device: 'gpu'
       img_size: 640
-      conf_thres: 0.8
+      conf_thres: 0.7
       iou_thres: 0.2
       min_area: 800
       min_ratio: 1
