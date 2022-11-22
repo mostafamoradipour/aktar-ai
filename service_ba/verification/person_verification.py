@@ -208,6 +208,7 @@ class PersonVerifier(object):
                         self.face_count.append(0)
                         face_count = 0
                         norm_face_feat = None
+                        self.q_idx_best_face.append(0)
                     else:
                         fe.put(norm_face_feat)
                         self.q_idx_best_face.append(1)
@@ -222,6 +223,7 @@ class PersonVerifier(object):
 
                     self.id_counter += 1
                     print(best_body_time_stamp)
+
                 else:
                     if face_query_id != bd_query_id:
                         print("face recognition has a conflict with person reid", f"face_{face_query_id} != person_{bd_query_id}")
@@ -262,8 +264,9 @@ class PersonVerifier(object):
                             self.q_idx_best_face[num_queue] += 1
                         print("found face")
                         
+                    force_update = self.q_idx_best_face[num_queue] == 1 and face.shape[0] > 1  if  self.save_with_face else  False
 
-                    if bd_found_conf > self.update_thres:                        
+                    if bd_found_conf > self.update_thres or force_update:                        
                         ## add feature in queue if body's confidence is between second threshold and 0.95 
                         if bd_found_conf < self.update_ignore:
                             ## delete feature from front of queue by FIFO policy
@@ -287,9 +290,13 @@ class PersonVerifier(object):
                         upadte_by_ratio = bd_aspect_ratio > self.bd_aspect_ratioes[num_queue] if  self.competetive_body_ratio else True
                         upadte_by_intensity = intensity >= self.intensity_thresh  if  self.competetive_body_intensity else True
                         upadte_by_face = fa_area > 0  if  self.save_with_face else True
+
+                        if force_update or upadte_by_face:
+                            print("fd")
+
                        
 
-                        if upadte_by_area and upadte_by_ratio and upadte_by_intensity and upadte_by_face:
+                        if (upadte_by_area and upadte_by_ratio and upadte_by_intensity and upadte_by_face) or force_update:
 
                             print(f"Update person[{query_id}], ")
                             self.bd_areas[num_queue] = bd_area
