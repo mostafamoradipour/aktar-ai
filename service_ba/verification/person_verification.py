@@ -181,7 +181,7 @@ class PersonVerifier(object):
                     fa_aspect_ratio = face.shape[0] / face.shape[1]
                 else:
                     face_found_conf = False
-                    face_query_id = None
+                    face_query_id = 'unknown'
                     fa_area = 0 
                     fa_aspect_ratio = 4
 
@@ -225,10 +225,9 @@ class PersonVerifier(object):
                     print(best_body_time_stamp)
 
                 else:
-                    if face_query_id != bd_query_id:
-                        print("face recognition has a conflict with person reid", f"face_{face_query_id} != person_{bd_query_id}")
-                    if face_found_conf > self.update_thres:
+                    if face_query_id != bd_query_id and face_query_id != 'unknown':
                         print("Matching by face recognition")
+                        force_update = True
                         query_id = face_query_id
                         num_queue = face_num_queue
                     else:
@@ -294,10 +293,7 @@ class PersonVerifier(object):
                         if force_update or upadte_by_face:
                             print("fd")
 
-                       
-
                         if (upadte_by_area and upadte_by_ratio and upadte_by_intensity and upadte_by_face) or force_update:
-
                             print(f"Update person[{query_id}], ")
                             self.bd_areas[num_queue] = bd_area
                             self.bd_aspect_ratioes[num_queue] = bd_aspect_ratio

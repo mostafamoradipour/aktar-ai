@@ -15,7 +15,7 @@ stream:
 
 cdm:
   body_thresh: 0.8
-  face_thresh: 0.8
+  face_thresh: 0.3
   intensity_thresh: 40
   update_threshold: 0.92
   update_ignore: 0.95
@@ -48,7 +48,7 @@ cdm:
   face_detection:
       device: 'gpu'
       img_size: 640
-      conf_thres: 0.4
+      conf_thres: 0.8
       iou_thres: 0.2
       min_area: 800
       min_ratio: 1
