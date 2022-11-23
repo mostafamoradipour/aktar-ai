@@ -29,17 +29,16 @@ class Database():
         id_counter = 0
         try:
             for index, doc in enumerate(documents):
-                q = Queue(maxsize = self.queue_size)
+                q = Queue(maxsize=self.queue_size)
                 q.put((np.array(doc['body_feature'])))
                 body_features[index] = q
                 body_counters.append(doc['body_counter'])
                 body_areas.append(doc['body_area'])
                 body_aspect_ratioes.append(doc['body_aspect_ratio'])
                 ids.append(doc['id'])
-                fa = Queue(maxsize = self.queue_size)
+                fa = Queue(maxsize=self.queue_size)
                 fa_feat = doc['face_feature']
                 time_stamps.append(doc['time'])
-                
 
                 if fa_feat != None:
                     fa.put((np.array(doc['body_feature'])))
@@ -50,16 +49,16 @@ class Database():
                 face_aspect_ratioes.append(doc['face_aspect_ratio'])
                 # faces.append(np.array(doc['best_face']))
 
-
-            id_counter = max([i['id'] for i in self.collection.find()]) + 1    
+            id_counter = max([i['id'] for i in self.collection.find()]) + 1
         except:
             pass
         face_att = face_features, face_counters, face_areas, face_aspect_ratioes
         body_att = body_features, body_counters, body_areas, body_aspect_ratioes
         return ids, body_att, face_att, time_stamps, id_counter
 
-    def update_body_feature(self, body, body_counter, body_norm_feat, body_area, body_aspect_ratio, id, time_stamp, method = None):
-        _, im_arr = cv2.imencode('.jpg', body)  # im_arr: image in Numpy one-dim array format.
+    def update_body_feature(self, body, body_counter, body_norm_feat, body_area, body_aspect_ratio, id, time_stamp, method=None):
+        # im_arr: image in Numpy one-dim array format.
+        _, im_arr = cv2.imencode('.jpg', body)
         im_bytes = im_arr.tobytes()
         im_b64 = base64.b64encode(im_bytes).decode()
 
@@ -69,7 +68,7 @@ class Database():
                   'body_counter': body_counter,
                   'body_feature': body_norm_feat.tolist(),
                   'body_area': body_area,
-                  'body_aspect_ratio': body_aspect_ratio,\
+                  'body_aspect_ratio': body_aspect_ratio,
                   'time': time_stamp}
 
         if method == 'save':
@@ -77,12 +76,13 @@ class Database():
 
         else:
             filter = {'id': id}
-            update = { "$set": record}
+            update = {"$set": record}
             self.collection.update_one(filter, update)
 
     def update_face(self, face, face_counter, face_norm_feature, face_area, face_aspect_ratio, id):
         if face.shape[0] > 1:
-            _, im_arr = cv2.imencode('.jpg', face)  # im_arr: image in Numpy one-dim array format.
+            # im_arr: image in Numpy one-dim array format.
+            _, im_arr = cv2.imencode('.jpg', face)
             im_bytes = im_arr.tobytes()
             im_b64 = base64.b64encode(im_bytes).decode()
 
@@ -92,7 +92,7 @@ class Database():
                       'face_feature': face_norm_feature.tolist(),
                       'face_area': face_area,
                       'face_aspect_ratio': face_aspect_ratio}
-        
+
         else:
             record = {'best_face': None,
                       'face_feature': face_norm_feature,
@@ -101,19 +101,18 @@ class Database():
                       'face_aspect_ratio': face_aspect_ratio}
 
         _filter = {'id': id}
-        update = { "$set": record}
+        update = {"$set": record}
         self.collection.update_one(_filter, update)
 
     def delete_item(self, id):
         _filter = {'id': id}
         self.collection.delete_one(_filter)
 
-
     def update_time(self, id, time_stamp):
         record = {'id': id,
                   'time': time_stamp}
         _filter = {'id': id}
-        update = { "$set": record}
+        update = {"$set": record}
         self.collection.update_one(_filter, update)
 
     def get_docs(self):
@@ -127,10 +126,10 @@ class Database():
 
 if __name__ == "__main__":
     cfg = {
-    "host": "0.0.0.0",
-    "port": 27017,
-    "database": "Aktar",
-    "collection": "CDM"
+        "host": "0.0.0.0",
+        "port": 27017,
+        "database": "Aktar",
+        "collection": "CDM"
     }
     db = Database(cfg)
     samples = db.get_docs()
