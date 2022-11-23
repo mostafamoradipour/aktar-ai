@@ -1,8 +1,7 @@
+UI
+assets
 *.onnx
 *.pyc
 *.mp4
 *.jpg
 *.png
-assets
-UI
-Faces
