@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from threading import Thread
 from flask_cors import CORS
 from waitress import serve
+from time import sleep
 import websockets
 import argparse
 import asyncio
@@ -226,6 +227,7 @@ def play():
                 stream_engine.cam_urls.append(camera["url"])
         if len(stream_engine.cam_urls):
             stream_engine.start()
+        while not stream_engine.started: pass
         return {"message": "playing is done"}, response_code["ok"]
     except:
         return {"message": "palying failed"}, response_code["bad_request"]

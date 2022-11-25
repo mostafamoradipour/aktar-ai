@@ -1,4 +1,4 @@
-from service_ba.verification import PersonVerifier
+from service_af.verification import PersonVerifier
 from service_cs.streaming import StreamerV1
 from threading import Thread
 

@@ -8,6 +8,7 @@ class streamEngine():
     def __init__(self):
         self.cam_urls = None
         self.running = False
+        self.started = False
 
     def stream(self):
         streamers = []
@@ -38,9 +39,11 @@ class streamEngine():
                         frame1 = np.hstack((frame2, frame3))
                         frame = np.vstack((frame, frame1))
             if ret0:
+                self.started = True
                 frame = resize(frame, width=1800)
                 cv2.imshow("Aktar-Stream", frame)
             if cv2.waitKey(1) == ord('q'):
+                self.started = False
                 self.running = False
                 break
             # if cv2.waitKey(1) and cv2.getWindowProperty("Aktar-C",cv2.WND_PROP_VISIBLE) < 1:
@@ -55,11 +58,12 @@ class streamEngine():
         self.trd = Thread(target=self.stream)
         self.running = True
         self.trd.start()
-        self.trd.join()
+        # self.trd.join()
 
     def stop(self):
         if not self.running:
             return
+        self.started = False
         self.running = False
         self.trd.join()
 
