@@ -14,7 +14,7 @@ stream:
     collection: CAM
 
 cdm:
-  body_thresh: 0.83
+  body_thresh: 0.80
   face_thresh: 0.55
   # intensity_thresh: 40
   update_threshold: 0.92
