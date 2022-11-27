@@ -29,12 +29,12 @@ cdm:
   body_detection:
     device: 'gpu'
     img_size: 640
-    conf_thres: 0.8
+    conf_thres: 0.9
     iou_thres: 0.4
     min_area: 1000
     min_ratio: 1.2
     max_ratio: 4
-    min_intensity: 40
+    min_intensity: 50
     left_pad: 0
     top_pad: 0
     right_pad: 0
@@ -54,7 +54,7 @@ cdm:
       min_area: 800
       min_ratio: 1
       max_ratio: 2
-      min_intensity: 40
+      min_intensity: 50
       left_pad: 0
       top_pad: 0
       right_pad: 0
