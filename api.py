@@ -31,11 +31,11 @@ print("CDM of Aktar deleted!")
 procs = []
 
 
-# negar_sync_trd = Thread(target=sync_negar, args=[cam_col, cdm_col, cfg["email"]])
-# negar_sync_trd.start()
-proc = Process(target=sync_negar, args=(cam_col, cdm_col, cfg["email"]))
-procs.append(proc)
-proc.start()
+negar_sync_trd = Thread(target=sync_negar, args=[cam_col, cdm_col, cfg["email"]])
+negar_sync_trd.start()
+# proc = Process(target=sync_negar, args=(cam_col, cdm_col, cfg["email"]))
+# procs.append(proc)
+# proc.start()
 
 
 async def stream(websocket):
@@ -108,11 +108,11 @@ async def cdm_serve():
         await asyncio.Future()
 
 
-# cdm_service_trd = Thread(target=asyncio.run, args=[cdm_serve()])
-# cdm_service_trd.start()
-proc = Process(target=asyncio.run, args=(cdm_serve(),))
-procs.append(proc)
-proc.start()
+cdm_service_trd = Thread(target=asyncio.run, args=[cdm_serve()])
+cdm_service_trd.start()
+# proc = Process(target=asyncio.run, args=(cdm_serve(),))
+# procs.append(proc)
+# proc.start()
 
 
 @app.route("/get", methods=["GET"])
