@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify
+from multiprocessing import Process
 from threading import Thread
 from flask_cors import CORS
 from waitress import serve
-from time import sleep
 import websockets
 import argparse
 import asyncio
@@ -22,17 +22,20 @@ with open('config.yaml', 'r') as f:
 
 app = Flask(__name__)
 CORS(app)
-
+response_code = cfg["response_code"]
 cam_col = Database(cfg["stream"]["mongodb"])
 cdm_col = Database(cfg["cdm"]["mongodb"])
 cdm_col.reset()
 os.system("rm -rf Faces/*")
 print("CDM of Aktar deleted!")
+procs = []
 
-negar_sync_trd = Thread(target=sync_negar, args=[cam_col, cdm_col, cfg["email"]])
-negar_sync_trd.start()
 
-response_code = cfg["response_code"]
+# negar_sync_trd = Thread(target=sync_negar, args=[cam_col, cdm_col, cfg["email"]])
+# negar_sync_trd.start()
+proc = Process(target=sync_negar, args=(cam_col, cdm_col, cfg["email"]))
+procs.append(proc)
+proc.start()
 
 
 async def stream(websocket):
@@ -105,8 +108,11 @@ async def cdm_serve():
         await asyncio.Future()
 
 
-cdm_service_trd = Thread(target=asyncio.run, args=[cdm_serve()])
-cdm_service_trd.start()
+# cdm_service_trd = Thread(target=asyncio.run, args=[cdm_serve()])
+# cdm_service_trd.start()
+proc = Process(target=asyncio.run, args=(cdm_serve(),))
+procs.append(proc)
+proc.start()
 
 
 @app.route("/get", methods=["GET"])

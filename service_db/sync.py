@@ -32,9 +32,9 @@ def sync_negar(cam_col, cdm_col, email):
             if len(faces) > g_c[_id]["face"] or len(bodies) > g_c[_id]["body"] or len(times) > g_c[_id]["time"]:
                 public_person = {"id": _id, "faces": faces[g_c[_id]["face"]:],
                                 "bodies": bodies[g_c[_id]["body"]:], "times": times[g_c[_id]["time"]:]}
-                g_c[_id]["face"] += len(faces)
-                g_c[_id]["body"] += len(bodies)
-                g_c[_id]["time"] += len(times)
+                g_c[_id]["face"] = len(faces)
+                g_c[_id]["body"] = len(bodies)
+                g_c[_id]["time"] = len(times)
                 public_persons.append(public_person)
         if len(public_persons):
             while True:
