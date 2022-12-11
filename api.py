@@ -31,11 +31,12 @@ cdm_col = Database(cfg["cdm"]["mongodb"])
 cdm_col.reset()
 os.system("rm -rf Faces/*")
 print("CDM of Aktar deleted!")
-procs = []
+# procs = []
 
 
 negar_sync_trd = Thread(target=sync_negar, args=[cam_col, cdm_col, cfg["email"]])
 negar_sync_trd.start()
+
 # proc = Process(target=sync_negar, args=(cam_col, cdm_col, cfg["email"]))
 # procs.append(proc)
 # proc.start()
@@ -78,7 +79,7 @@ async def sream_serve():
 # stream_service_trd.start()
 stream_engine = streamEngine()
 cdm_engine = searchEngine(cfg["cdm"])
-loc_engine = locEngine()
+# loc_engine = locEngine()
 
 
 async def cdm(websocket):
@@ -253,17 +254,17 @@ def stop():
     stream_engine.stop()
 
 
-async def digital_twin(websocket):
-    for data in loc_engine.find():
-        try:
-            await websocket.send(json.dumps({"data": data}))
-        except websockets.exceptions.ConnectionClosedError:
-            return
+# async def digital_twin(websocket):
+#     for data in loc_engine.find():
+#         try:
+#             await websocket.send(json.dumps({"data": data}))
+#         except websockets.exceptions.ConnectionClosedError:
+#             return
 
 
-async def dt_serve():
-    async with websockets.serve(digital_twin, "localhost", 5002):
-        await asyncio.Future()
+# async def dt_serve():
+#     async with websockets.serve(digital_twin, "localhost", 5002):
+#         await asyncio.Future()
 
 
 # dt_service_trd = Thread(target=asyncio.run, args=[dt_serve()])

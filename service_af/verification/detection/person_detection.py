@@ -61,9 +61,9 @@ class PersonDetector(object):
         pred = non_max_suppression_person(pred, self.conf_thres, self.iou_thres)
 
         # Filter boxes by aspect ratio and area and margin
-        pred = ignore_boxes(img_hsv , boxes = pred, img_shape = img.shape[2:], 
-                            ltrb = self.ltrb, min_area = self.min_area,
-                            min_ratio = self.min_ratio, max_ratio = self.max_ratio, min_intensity = self.min_intensity) 
+        # pred = ignore_boxes(img_hsv , boxes = pred, img_shape = img.shape[2:], 
+        #                     ltrb = self.ltrb, min_area = self.min_area,
+        #                     min_ratio = self.min_ratio, max_ratio = self.max_ratio, min_intensity = self.min_intensity) 
                             
         # Process detections
         for i, det in enumerate(pred):  # detections per image

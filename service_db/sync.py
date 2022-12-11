@@ -1,9 +1,11 @@
 import requests
+from datetime import datetime
 
 
 def sync_negar(cam_col, cdm_col, email):
     cam_url = 'https://api.kachrobotics.com/api/user/post_camera_stream/'
     cdm_url = 'https://api.kachrobotics.com/api/user/customer_data/'
+    insight_url = 'https://api.kachrobotics.com/api/user/post_insight/'
     res = requests.delete(url=cdm_url, json={"email": email})
     if res.status_code == 200:
         print("Negar CDM deleted!")
@@ -29,6 +31,7 @@ def sync_negar(cam_col, cdm_col, email):
             faces = [person[f"best_face_{count+1}"] for count in range(person["face_counter"])]
             bodies = [person[f"best_body_{count+1}"] for count in range(person["body_counter"])]
             times = person["time"]
+
             if len(faces) > g_c[_id]["face"] or len(bodies) > g_c[_id]["body"] or len(times) > g_c[_id]["time"]:
                 public_person = {"id": _id, "faces": faces[g_c[_id]["face"]:],
                                 "bodies": bodies[g_c[_id]["body"]:], "times": times[g_c[_id]["time"]:]}
@@ -36,6 +39,13 @@ def sync_negar(cam_col, cdm_col, email):
                 g_c[_id]["body"] = len(bodies)
                 g_c[_id]["time"] = len(times)
                 public_persons.append(public_person)
+        current_count = 0
+        for person in persons:
+            time = person["time"][-1]
+            if datetime.strptime(time, "%Y-%m-%d %H:%M:%S").timestamp() > datetime.now().timestamp() - 5:
+                current_count += 1
+        res = requests.post(url=insight_url, json={"email": email, "count": current_count})
+        print("count synced with negar: ", res.status_code)
         if len(public_persons):
             while True:
                 record =  {"email": email, "persons": public_persons}
