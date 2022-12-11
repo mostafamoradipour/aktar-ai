@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify
 from multiprocessing import Process
+from datetime import datetime
 from threading import Thread
 from flask_cors import CORS
 from waitress import serve
+import numpy as np
 import websockets
 import argparse
 import asyncio
@@ -12,6 +14,7 @@ import os
 
 from service_af.personSearch import searchEngine
 from service_cs.streamer import streamEngine
+from service_dt.location import locEngine
 from service_db.db_api import Database
 from service_db.sync import sync_negar
 
@@ -75,6 +78,7 @@ async def sream_serve():
 # stream_service_trd.start()
 stream_engine = streamEngine()
 cdm_engine = searchEngine(cfg["cdm"])
+loc_engine = locEngine()
 
 
 async def cdm(websocket):
@@ -167,7 +171,12 @@ def profile_manager():
 def insight_manager():
     try:
         persons = cdm_col.get_docs()
-        return jsonify({"person_count": len(persons)}), response_code["ok"]
+        current_count = 0
+        for person in persons:
+            time = person["time"][-1]
+            if datetime.strptime(time, "%Y-%m-%d %H:%M:%S").timestamp() > datetime.now().timestamp() - 5:
+                current_count += 1
+        return jsonify({"person_current_count": current_count, "person_total_count": len(persons)}), response_code["ok"]
     except:
         return {"message": "Failed to load the customer info from database"}, response_code["bad_request"]
 
@@ -242,6 +251,23 @@ def play():
 @app.route("/stop", methods=["GET"])
 def stop():
     stream_engine.stop()
+
+
+async def digital_twin(websocket):
+    for data in loc_engine.find():
+        try:
+            await websocket.send(json.dumps({"data": data}))
+        except websockets.exceptions.ConnectionClosedError:
+            return
+
+
+async def dt_serve():
+    async with websockets.serve(digital_twin, "localhost", 5002):
+        await asyncio.Future()
+
+
+# dt_service_trd = Thread(target=asyncio.run, args=[dt_serve()])
+# dt_service_trd.start()
 
 
 def create_app():

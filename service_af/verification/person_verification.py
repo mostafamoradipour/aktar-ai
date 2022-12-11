@@ -2,10 +2,11 @@ from .utils import get_confidence, assign_face_person, linear_assignment
 from .detection import PersonDetector, FaceDetector
 from .extraction import FeatureExtractor
 from service_db.cdm_db import Database
-from time import gmtime, strftime
 from numpy.linalg import norm
+from datetime import datetime
 from queue import Queue
 import numpy as np
+import requests
 import cv2
 
 
@@ -120,7 +121,7 @@ class PersonVerifier(object):
                 # intensity = np.mean(img_hsv[y1 : y2, x1 : x2, 2])
                 bd_area = body.shape[1] * body.shape[0]
                 bd_aspect_ratio = body.shape[0] / body.shape[1]
-                best_body_time_stamp = strftime("%Y-%m-%d %H:%M:%S", gmtime())
+                best_body_time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 face = person_face[bd_idx]
                 if face.shape[0] > 1:
                     face_feat = self.face_extractor.extract_one(face)
@@ -145,8 +146,7 @@ class PersonVerifier(object):
                     self.bd_areas.append(bd_area)
                     self.bd_aspect_ratioes.append(bd_aspect_ratio)
                     self.q_idx_best_person.append(1)
-                    best_body_time_stamp = strftime(
-                        "%Y-%m-%d %H:%M:%S", gmtime())
+                    best_body_time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     self.time_stamps.append([best_body_time_stamp])
                     self.database.update_body_feature(body, 1, norm_bd_feat, bd_area, bd_aspect_ratio,
                                                       id=self.id_counter, time_stamp=[best_body_time_stamp], method="save")
@@ -176,6 +176,9 @@ class PersonVerifier(object):
                         query_id = face_query_id
                         num_queue = face_num_queue
                         if bd_query_id != 'unknown':
+                            url = 'https://api.kachrobotics.com/api/user/customer_data/'
+                            res = requests.put(url=url, json={"email": "mostafa.moradipoor73@gmail.com", "deleteId": bd_query_id, "mergeId": face_query_id})
+                            print("merge sync with negar: ", res.status_code)
                             self.merge_id(
                                 face_query_id, face_num_queue, bd_query_id, bd_num_queue)
                             num_queue = num_queue - 1 if num_queue > bd_num_queue else num_queue
@@ -225,8 +228,7 @@ class PersonVerifier(object):
                                 self.q_idx_best_person[num_queue] = 1
                             self.bd_features[query_id].put(norm_bd_feat)
                             self.q_idx_best_person[num_queue] += 1
-                        body_time_stamp = strftime(
-                            "%Y-%m-%d %H:%M:%S", gmtime())
+                        body_time_stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         self.time_stamps[num_queue].append(body_time_stamp)
                         # Update database  if best appereance is found
                         upadte_by_area = bd_area > self.bd_areas[num_queue] if self.competetive_body_area else True
