@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify
-from multiprocessing import Process
 from datetime import datetime
 from threading import Thread
 from flask_cors import CORS
@@ -14,9 +13,9 @@ import os
 
 from service_af.personSearch import searchEngine
 from service_cs.streamer import streamEngine
-from service_dt.location import locEngine
+# from service_dt.location import locEngine
 from service_db.db_api import Database
-from service_db.sync import sync_negar
+# from service_db.sync import sync_negar
 
 
 with open('config.yaml', 'r') as f:
@@ -34,8 +33,8 @@ print("CDM of Aktar deleted!")
 # procs = []
 
 
-negar_sync_trd = Thread(target=sync_negar, args=[cam_col, cdm_col, cfg["email"]])
-negar_sync_trd.start()
+# negar_sync_trd = Thread(target=sync_negar, args=[cam_col, cdm_col])
+# negar_sync_trd.start()
 
 # proc = Process(target=sync_negar, args=(cam_col, cdm_col, cfg["email"]))
 # procs.append(proc)

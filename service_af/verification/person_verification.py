@@ -1,12 +1,13 @@
 from .utils import get_confidence, assign_face_person, linear_assignment
 from .detection import PersonDetector, FaceDetector
+# from service_lg.login_request import client
 from .extraction import FeatureExtractor
 from service_db.cdm_db import Database
 from numpy.linalg import norm
 from datetime import datetime
 from queue import Queue
 import numpy as np
-import requests
+# import requests
 import cv2
 
 
@@ -41,6 +42,15 @@ class PersonVerifier(object):
         else:
             self.q_idx_best_person = []
             self.q_idx_best_face = []
+
+        # # Retrieve the CSRF token first
+        # client.get("https://api.kachrobotics.com/api/user/set_csrf_cookie/")  # sets cookie
+        # if 'csrftoken' in client.cookies:
+        #     # Django 1.6 and up
+        #     self.csrftoken = client.cookies['csrftoken']
+        # else:
+        #     # older versions
+        #     self.csrftoken = client.cookies['csrf']
 
     def merge_id(self, face_query_id, face_num_queue, bd_query_id,  bd_num_queue):
         print(
@@ -176,9 +186,9 @@ class PersonVerifier(object):
                         query_id = face_query_id
                         num_queue = face_num_queue
                         if bd_query_id != 'unknown':
-                            url = 'https://api.kachrobotics.com/api/user/customer_data/'
-                            res = requests.put(url=url, json={"email": "mostafa.moradipoor73@gmail.com", "deleteId": bd_query_id, "mergeId": face_query_id})
-                            print("merge sync with negar: ", res.status_code)
+                            # url = 'https://api.kachrobotics.com/api/user/customer_data/'
+                            # res = requests.put(url=url, json={"csrfmiddlewaretoken":self.csrftoken, "deleteId": bd_query_id, "mergeId": face_query_id})
+                            # print("merge sync with negar: ", res.status_code)
                             self.merge_id(
                                 face_query_id, face_num_queue, bd_query_id, bd_num_queue)
                             num_queue = num_queue - 1 if num_queue > bd_num_queue else num_queue

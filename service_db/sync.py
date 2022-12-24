@@ -1,12 +1,21 @@
-import requests
+from service_lg.login_request import client
 from datetime import datetime
+import requests
 
 
-def sync_negar(cam_col, cdm_col, email):
+def sync_negar(cam_col, cdm_col):
+    # Retrieve the CSRF token first
+    client.get("https://api.kachrobotics.com/api/user/set_csrf_cookie/")  # sets cookie
+    if 'csrftoken' in client.cookies:
+        # Django 1.6 and up
+        csrftoken = client.cookies['csrftoken']
+    else:
+        # older versions
+        csrftoken = client.cookies['csrf']
     cam_url = 'https://api.kachrobotics.com/api/user/post_camera_stream/'
     cdm_url = 'https://api.kachrobotics.com/api/user/customer_data/'
     insight_url = 'https://api.kachrobotics.com/api/user/post_insight/'
-    res = requests.delete(url=cdm_url, json={"email": email})
+    res = requests.delete(url=cdm_url, json={"csrfmiddlewaretoken":csrftoken})
     if res.status_code == 200:
         print("Negar CDM deleted!")
     g_c = {}  # general counter
@@ -21,7 +30,7 @@ def sync_negar(cam_col, cdm_col, email):
             camera["url"] = camera["url"].replace(local_ip, public_ip)
             public_cameras.append(camera)
         res = requests.post(url=cam_url, json={
-                            "email": email, "cameras": public_cameras})
+                            "csrfmiddlewaretoken":csrftoken, "cameras": public_cameras})
         print("camera", res.status_code)
         public_persons = []
         for person in persons:
@@ -44,11 +53,11 @@ def sync_negar(cam_col, cdm_col, email):
             time = person["time"][-1]
             if datetime.strptime(time, "%Y-%m-%d %H:%M:%S").timestamp() > datetime.now().timestamp() - 5:
                 current_count += 1
-        res = requests.post(url=insight_url, json={"email": email, "count": current_count})
+        res = requests.post(url=insight_url, json={"csrfmiddlewaretoken":csrftoken, "count": current_count})
         print("count synced with negar: ", res.status_code)
         if len(public_persons):
             while True:
-                record =  {"email": email, "persons": public_persons}
+                record =  {"csrfmiddlewaretoken":csrftoken, "persons": public_persons}
                 res = requests.post(url=cdm_url, json=record)
                 if res.status_code == 200:
                     print("CDM", res.status_code)

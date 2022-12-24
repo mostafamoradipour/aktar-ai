@@ -59,11 +59,11 @@ cdm:
       top_pad: 0
       right_pad: 0
       bottom_pad: 0
-      weights: 'service_af/verification/detection/weights/yolov5n-face.onnx'
+      weights: service_af/verification/detection/weights/yolov5n-face.onnx
 
   face_extraction:
     device: gpu
-    weights: 'service_af/verification/extraction/weights/w600k_mbf.onnx'
+    weights: service_af/verification/extraction/weights/w600k_mbf.onnx
     input_size: [112, 112]
 
   mongodb:
@@ -72,3 +72,8 @@ cdm:
     database: Aktar
     collection: CDM
     queue_maxsize: 10
+
+dt:
+  joint_detection:
+    device: gpu
+    weights: service_jt/models/human-pose-estimation-3d.pth
