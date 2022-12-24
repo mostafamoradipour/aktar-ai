@@ -4,6 +4,7 @@ assets
 *.pyc
 *.mp4
 *.jpg
+*.jpeg
 *.png
 *.avi
 *.pth
