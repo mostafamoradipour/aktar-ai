@@ -6,3 +6,5 @@ assets
 *.jpg
 *.png
 *.avi
+*.pth
+*.trt
