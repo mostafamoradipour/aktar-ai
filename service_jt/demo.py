@@ -42,7 +42,7 @@ if __name__ == '__main__':
                              'Only Nvidia GPU devices are supported.',
                         action='store_true', default=False)
     parser.add_argument('--images', help='Optional. Path to input image(s).', nargs='+', default='')
-    parser.add_argument('--height-size', help='Optional. Network input layer height size.', type=int, default=128)
+    parser.add_argument('--height-size', help='Optional. Network input layer height size.', type=int, default=512)
     parser.add_argument('--extrinsics-path',
                         help='Optional. Path to file with camera extrinsics.',
                         type=str, default=None)
@@ -69,13 +69,13 @@ if __name__ == '__main__':
     cv2.namedWindow(canvas_3d_window_name)
     cv2.setMouseCallback(canvas_3d_window_name, Plotter3d.mouse_callback)
 
-    file_path = args.extrinsics_path
-    if file_path is None:
-        file_path = os.path.join('data', 'extrinsics.json')
-    with open(file_path, 'r') as f:
-        extrinsics = json.load(f)
-    R = np.array(extrinsics['R'], dtype=np.float32)
-    t = np.array(extrinsics['t'], dtype=np.float32)
+    # file_path = args.extrinsics_path
+    # if file_path is None:
+    #     file_path = os.path.join('data', 'extrinsics.json')
+    # with open(file_path, 'r') as f:
+    #     extrinsics = json.load(f)
+    # R = np.array(extrinsics['R'], dtype=np.float32)
+    # t = np.array(extrinsics['t'], dtype=np.float32)
 
     frame_provider = ImageReader(args.images)
     is_video = False
@@ -107,7 +107,7 @@ if __name__ == '__main__':
         #     print(ar.shape)
         # break
         t0 = time.time()
-        poses_3d, poses_2d = parse_poses(inference_result, input_scale, stride, fx, is_video)
+        poses_3d, poses_2d = parse_poses(inference_result, input_scale, stride, fx)
         print('Extract: {:1.3f}'.format(time.time()-t0))
         # edges = []
         # if len(poses_3d):

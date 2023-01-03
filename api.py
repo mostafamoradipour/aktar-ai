@@ -14,13 +14,15 @@ import os
 from service_af.personSearch import searchEngine
 from service_cs.streamer import streamEngine
 # from service_dt.location import locEngine
-from service_db.db_api import Database
 # from service_db.sync import sync_negar
+from service_db.db_api import Database
+from service_dt.live import DTEngine
 
+###############################################################################################
 
+#-------------------------------------------Init-------------------------------------------#
 with open('config.yaml', 'r') as f:
     cfg = yaml.safe_load(f)
-
 
 app = Flask(__name__)
 CORS(app)
@@ -30,59 +32,86 @@ cdm_col = Database(cfg["cdm"]["mongodb"])
 cdm_col.reset()
 os.system("rm -rf Faces/*")
 print("CDM of Aktar deleted!")
-# procs = []
+stream_engine = streamEngine()
+cameras = cam_col.get_docs()
+url = cameras[1]["url"]
+loc_engine = DTEngine(cfg["dt"], url)
+cdm_engine = searchEngine(cfg["cdm"])
+#-------------------------------------------Init-------------------------------------------#
 
+###############################################################################################
 
+#-------------------------------------------Negar-------------------------------------------#
+# # Negar Sync
 # negar_sync_trd = Thread(target=sync_negar, args=[cam_col, cdm_col])
 # negar_sync_trd.start()
+#-------------------------------------------Negar-------------------------------------------#
 
-# proc = Process(target=sync_negar, args=(cam_col, cdm_col, cfg["email"]))
-# procs.append(proc)
-# proc.start()
+###############################################################################################
 
-
-async def stream(websocket):
-    stream_engine = streamEngine()
-    async for message in websocket:
-        message = json.loads(message)
-        command = message["command"]
+#-------------------------------------------DT-------------------------------------------#
+async def digital_twin(websocket):
+    for data in loc_engine.generator():
         try:
-            if command == "start":
-                for camera in message["cameras"]:
-                    stream_engine.cam_urls.append(camera["url"])
-                stream_engine.start()
-                message = "Stream service started successfully"
-                print(message)
-                await websocket.send(json.dumps({"message": message}))
-            elif command == "stop":
-                stream_engine.stop()
-                message = "Stream service stopped successfully"
-                print(message)
-                await websocket.send(json.dumps({"message": message}))
-            else:
-                message = f"The command '{command}' not supported in Stream service of Aktar"
-                print(message)
-                await websocket.send(json.dumps({"message": message}))
-        except:
-            message = "You send a bad request"
-            print(message)
-            await websocket.send(json.dumps({"message": message}))
+            await websocket.send(json.dumps({"data": data}))
+        except websockets.exceptions.ConnectionClosedError:
+            return
 
 
-async def sream_serve():
-    async with websockets.serve(stream, "localhost", 5002):
+async def dt_serve():
+    async with websockets.serve(digital_twin, "localhost", 5002):
         await asyncio.Future()
+
+
+dt_service_trd = Thread(target=asyncio.run, args=[dt_serve()])
+dt_service_trd.start()
+#-------------------------------------------DT-------------------------------------------#
+
+###############################################################################################
+
+#-------------------------------------------Stream-------------------------------------------#
+# # Stream service based on websocket
+# async def stream(websocket):
+#     stream_engine = streamEngine()
+#     async for message in websocket:
+#         message = json.loads(message)
+#         command = message["command"]
+#         try:
+#             if command == "start":
+#                 for camera in message["cameras"]:
+#                     stream_engine.cam_urls.append(camera["url"])
+#                 stream_engine.start()
+#                 message = "Stream service started successfully"
+#                 print(message)
+#                 await websocket.send(json.dumps({"message": message}))
+#             elif command == "stop":
+#                 stream_engine.stop()
+#                 message = "Stream service stopped successfully"
+#                 print(message)
+#                 await websocket.send(json.dumps({"message": message}))
+#             else:
+#                 message = f"The command '{command}' not supported in Stream service of Aktar"
+#                 print(message)
+#                 await websocket.send(json.dumps({"message": message}))
+#         except:
+#             message = "You send a bad request"
+#             print(message)
+#             await websocket.send(json.dumps({"message": message}))
+
+
+# async def sream_serve():
+#     async with websockets.serve(stream, "localhost", 5002):
+#         await asyncio.Future()
 
 
 # stream_service_trd = Thread(target=asyncio.run, args=[sream_serve()])
 # stream_service_trd.start()
-stream_engine = streamEngine()
-cdm_engine = searchEngine(cfg["cdm"])
-# loc_engine = locEngine()
+#-------------------------------------------Stream-------------------------------------------#
 
+###############################################################################################
 
+#-------------------------------------------CDM-------------------------------------------#
 async def cdm(websocket):
-    # cdm_engine = searchEngine(cfg["cdm"])
     async for message in websocket:
         message = json.loads(message)
         command = message["command"]
@@ -114,11 +143,11 @@ async def cdm_serve():
 
 cdm_service_trd = Thread(target=asyncio.run, args=[cdm_serve()])
 cdm_service_trd.start()
-# proc = Process(target=asyncio.run, args=(cdm_serve(),))
-# procs.append(proc)
-# proc.start()
+#-------------------------------------------CDM-------------------------------------------#
 
+###############################################################################################
 
+#-------------------------------------------REST-------------------------------------------#
 @app.route("/get", methods=["GET"])
 def get_cameras():
     try:
@@ -251,24 +280,9 @@ def play():
 @app.route("/stop", methods=["GET"])
 def stop():
     stream_engine.stop()
+#-------------------------------------------REST-------------------------------------------#
 
-
-# async def digital_twin(websocket):
-#     for data in loc_engine.find():
-#         try:
-#             await websocket.send(json.dumps({"data": data}))
-#         except websockets.exceptions.ConnectionClosedError:
-#             return
-
-
-# async def dt_serve():
-#     async with websockets.serve(digital_twin, "localhost", 5002):
-#         await asyncio.Future()
-
-
-# dt_service_trd = Thread(target=asyncio.run, args=[dt_serve()])
-# dt_service_trd.start()
-
+###############################################################################################
 
 def create_app():
     return app

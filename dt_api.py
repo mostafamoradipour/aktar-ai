@@ -1,5 +1,5 @@
-from service_dt.location import locEngine_joint
 from service_db.db_api import Database
+from service_dt.live import DTEngine
 import websockets
 import asyncio
 import json
@@ -10,14 +10,14 @@ with open('config.yaml', 'r') as f:
     cfg = yaml.safe_load(f)
 cam_col = Database(cfg["stream"]["mongodb"])
 cameras = cam_col.get_docs()
-# url = cameras[1]["url"]
-url = "outpy.avi"
+url = cameras[1]["url"]
+# url = "outpy.avi"
 # loc_engine = locEngine_demo(cfg["cdm"]["body_detection"], url)
-loc_engine = locEngine_joint(cfg["dt"]["joint_detection"], url)
+loc_engine = DTEngine(cfg["dt"], url)
 
 
 async def digital_twin(websocket):
-    for data in loc_engine.find():
+    for data in loc_engine.generator():
         try:
             await websocket.send(json.dumps({"data": data}))
         except websockets.exceptions.ConnectionClosedError:
