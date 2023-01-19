@@ -21,29 +21,29 @@ cdm:
   update_ignore: 0.95
   iou_threshold_face_person: 0.01
   competetive_body_ratio: False
-  competetive_body_area: True
+  competetive_body_area: False
   # competetive_body_intensity: True
   save_with_face: True
   competetive_face_ratio: False
-  competetive_face_area: True
+  competetive_face_area: False
   body_detection:
     device: 'gpu'
     img_size: 640
     conf_thres: 0.9
     iou_thres: 0.4
     min_area: 1000
-    min_ratio: 1.2
+    min_ratio: 2.5
     max_ratio: 4
-    min_intensity: 50
+    min_intensity: 40
     left_pad: 0
     top_pad: 0
     right_pad: 0
     bottom_pad: 0
-    weights: service_af/verification/detection/weights/crowdhuman_yolov5m.onnx
+    weights: modules/Aktar_AI/DetRec/verification/detection/weights/crowdhuman_yolov5m.onnx
 
   body_extraction:
     device: gpu
-    weights: service_af/verification/extraction/weights/osnet_x0_25_msmt17.onnx
+    weights: modules/Aktar_AI/DetRec/verification/extraction/weights/osnet_x0_25_msmt17.onnx
     input_size: [128, 256]
 
   face_detection:
@@ -53,17 +53,17 @@ cdm:
       iou_thres: 0.2
       min_area: 800
       min_ratio: 1
-      max_ratio: 2
-      min_intensity: 50
+      max_ratio: 3
+      min_intensity: 40
       left_pad: 0
       top_pad: 0
       right_pad: 0
       bottom_pad: 0
-      weights: service_af/verification/detection/weights/yolov5n-face.onnx
+      weights: modules/Aktar_AI/DetRec/verification/detection/weights/yolov5n-face.onnx
 
   face_extraction:
     device: gpu
-    weights: service_af/verification/extraction/weights/w600k_mbf.onnx
+    weights: modules/Aktar_AI/DetRec/verification/extraction/weights/w600k_mbf.onnx
     input_size: [112, 112]
 
   mongodb:
@@ -74,6 +74,19 @@ cdm:
     queue_maxsize: 10
 
 dt:
+  walking_data: modules/Aktar_AI/DTwin/assets/walking.json
+  standing_data: modules/Aktar_AI/DTwin/assets/standing.json
+
+  mapping:
+    calibration_file: modules/Aktar_AI/DTwin/assets/calibration.yaml
+    image_points: modules/Aktar_AI/DTwin/assets/imagePoints.npy
+
   joint_detection:
     device: gpu
-    weights: service_jt/models/human-pose-estimation-3d.pth
+    weights: modules/Aktar_AI/Joint/models/human-pose-estimation-3d.pth
+    
+  mongodb:
+    host: 0.0.0.0
+    port: 27017
+    database: Aktar
+    collection: DT

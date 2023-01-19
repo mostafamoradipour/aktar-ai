@@ -26,7 +26,7 @@ Put the [pretrained weights](https://drive.google.com/file/d/19I-MZdctYKmVf3nu5D
 
 <h3>Then get and install Aktar-UI by running these commands:</h3>
 
-`git clone https://github.com/YasharSL/Aktar.git UI`
+`git clone https://github.com/YasharSL/Aktar.git interface`
 
 `cd UI`
 

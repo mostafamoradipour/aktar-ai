@@ -1,0 +1,15 @@
+opencv-python
+onnxruntime
+numpy
+PyYAML
+click
+Flask
+flask-socketio
+itsdangerous
+Jinja2
+MarkupSafe
+numpy
+websockets
+websockify
+Werkzeug
+eventlet

@@ -11,32 +11,31 @@ import yaml
 import json
 import os
 
-from service_af.personSearch import searchEngine
-from service_cs.streamer import streamEngine
-# from service_dt.location import locEngine
-# from service_db.sync import sync_negar
-from service_db.db_api import Database
-from service_dt.live import DTEngine
+# from services.DataBase.negar_sync import sync_negar
+from services.Stream.streamer import streamEngine
+from services.DataBase.aktar_api import apiDB
+from services.CDataM.manager import CDManager
+from services.DTwin.live import LiveDT
 
 ###############################################################################################
 
 #-------------------------------------------Init-------------------------------------------#
 with open('config.yaml', 'r') as f:
     cfg = yaml.safe_load(f)
-
 app = Flask(__name__)
 CORS(app)
 response_code = cfg["response_code"]
-cam_col = Database(cfg["stream"]["mongodb"])
-cdm_col = Database(cfg["cdm"]["mongodb"])
+cam_col = apiDB(cfg["stream"]["mongodb"])
+cdm_col = apiDB(cfg["cdm"]["mongodb"])
+dt_col = apiDB(cfg["dt"]['mongodb'])
 cdm_col.reset()
-os.system("rm -rf Faces/*")
-print("CDM of Aktar deleted!")
+dt_col.reset()
+print("CDM and DT of Aktar reseted!")
 stream_engine = streamEngine()
 cameras = cam_col.get_docs()
-url = cameras[1]["url"]
-loc_engine = DTEngine(cfg["dt"], url)
-cdm_engine = searchEngine(cfg["cdm"])
+url = cameras[0]["url"]
+live_dt = LiveDT(cfg["dt"], url)
+cdm_engine = CDManager(cfg["cdm"])
 #-------------------------------------------Init-------------------------------------------#
 
 ###############################################################################################
@@ -51,7 +50,7 @@ cdm_engine = searchEngine(cfg["cdm"])
 
 #-------------------------------------------DT-------------------------------------------#
 async def digital_twin(websocket):
-    for data in loc_engine.generator():
+    for data in live_dt.generator():
         try:
             await websocket.send(json.dumps({"data": data}))
         except websockets.exceptions.ConnectionClosedError:
@@ -64,7 +63,7 @@ async def dt_serve():
 
 
 dt_service_trd = Thread(target=asyncio.run, args=[dt_serve()])
-dt_service_trd.start()
+# dt_service_trd.start()
 #-------------------------------------------DT-------------------------------------------#
 
 ###############################################################################################
@@ -142,7 +141,7 @@ async def cdm_serve():
 
 
 cdm_service_trd = Thread(target=asyncio.run, args=[cdm_serve()])
-cdm_service_trd.start()
+# cdm_service_trd.start()
 #-------------------------------------------CDM-------------------------------------------#
 
 ###############################################################################################
@@ -184,12 +183,18 @@ def profile_manager():
     _id = req["id"]
     try:
         persons = cdm_col.get_docs()
+        dt_doc = dt_col.get_docs()
+        if dt_doc:
+            height = int(dt_col.get_docs()[0]['height'])
+        else:
+            height = None
         for person in persons:
             if person["id"] == _id:
                 faces = [person[f"best_face_{count+1}"] for count in range(person["face_counter"])]
                 bodies = [person[f"best_body_{count+1}"] for count in range(person["body_counter"])]
                 times = person["time"]
-                public_person = {"id": _id, "faces": faces, "bodies": bodies, "times": times}
+
+                public_person = {"id": _id, "faces": faces, "bodies": bodies, "times": times, 'height': height}
                 break
         return jsonify({"persons": public_person}), response_code["ok"]
     except:
@@ -293,9 +298,13 @@ if __name__ == "__main__":
     parser.add_argument('-p', "--port", type=int,
                         default=5000, help="Port of serving api")
     args = parser.parse_args()
+    cdm_service_trd.start()
+    dt_service_trd.start()
     # production server
     # serve(app, host="0.0.0.0", port=args.port)
     # or in cmd: 
     #      waitress-serve --port=5000 --call api:create_app
     # development server
     app.run(host='0.0.0.0', port=args.port)
+    cdm_service_trd.join()
+    dt_service_trd.join()
