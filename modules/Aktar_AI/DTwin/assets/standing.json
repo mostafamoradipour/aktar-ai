@@ -1,0 +1,83 @@
+{
+  "pose_id": 9,
+  "bones": [
+    {
+      "id": 8,
+      "rotation": {
+        "z": 0
+      }
+    },
+    {
+      "id": 9,
+      "rotation": {
+        "z": 0
+      }
+    },
+    {
+      "id": 16,
+      "rotation": {
+        "z": 0
+      }
+    },
+    {
+      "id": 17,
+      "rotation": {
+        "z": 0
+      }
+    },
+    {
+      "id": 1,
+      "rotation": {
+        "x": 0
+      }
+    },
+    {
+      "id": 23,
+      "rotation": {
+        "x": 0
+      }
+    },
+    {
+      "id": 24,
+      "rotation": {
+        "x": -0.084
+      }
+    },
+    {
+      "id": 25,
+      "rotation": {
+        "x": 1.39
+      }
+    },
+    {
+      "id": 26,
+      "rotation": {
+        "x": 0.25
+      }
+    },
+    {
+      "id": 28,
+      "rotation": {
+        "x": 0
+      }
+    },
+    {
+      "id": 29,
+      "rotation": {
+        "x": 0
+      }
+    },
+    {
+      "id": 30,
+      "rotation": {
+        "x": 1.267
+      }
+    },
+    {
+      "id": 31,
+      "rotation": {
+        "x": 0.31
+      }
+    }
+  ]
+}

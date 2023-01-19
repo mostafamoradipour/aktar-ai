@@ -1,5 +1,4 @@
 interface
-assets
 *.onnx
 *.pyc
 *.mp4
@@ -9,3 +8,5 @@ assets
 *.avi
 *.pth
 *.trt
+*.glb
+extra
