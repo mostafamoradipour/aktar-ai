@@ -64,7 +64,7 @@ class StreamerV1(object):
         self.exit_event = Event()
         self.cond = Condition()
         self.thread = Thread(target=self.read_input_uri, name='Streamer')
-        self.thread.start()
+        # self.thread.start()
 
     def read_input_uri(self):
         counter = 0

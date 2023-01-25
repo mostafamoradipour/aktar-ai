@@ -1,6 +1,7 @@
 from modules.Aktar_AI.Joint.joint_detection import JointDetector
 from modules.Aktar_AI.DTwin.kf import static_kf, KalmanFilter
 from modules.Aktar_AI.DTwin.mapping import PointMapper
+from copy import deepcopy
 from time import time
 import numpy as np
 import json
@@ -19,6 +20,7 @@ class DTEngine():
         self.pose_id = 0
         self.is_fallen = False
         self.location_shift = [2.8, -.8]
+        # self.location_shift = [0, 0]
         self.times = {"start_time": None}
 
     def run(self, frame):
@@ -26,7 +28,7 @@ class DTEngine():
         ms_location = None
         poses, _ = self.detector.detect_one(frame)
         if len(poses):
-            ms_location, ms_height, posture = self.process_poses(poses)
+            ms_location, ms_height, posture, fall_location = self.process_poses(poses)
             if posture:
                 self.is_fallen = True if posture == "fall" else False
             self.height_kf.step(ms_height)
@@ -36,24 +38,28 @@ class DTEngine():
                 data = self.walking_data[self.pose_id]
             else:
                 data = self.standing_data
-        x, z =  np.array(self.tracking_kf.x[:2]).reshape(-1) / 100
-        # print("location: ", x, z)
+            if fall_location:
+                self.fall_location = fall_location
+        if self.is_fallen:
+            x, z = self.fall_location[0] / 100, self.fall_location[1] /  100
+        else:
+            x, z =  np.array(self.tracking_kf.x[:2]).reshape(-1) / 100
         data["location"] = {"x": x+self.location_shift[0], "z": z+self.location_shift[1]}
         dx, dz =  np.array(self.tracking_kf.x[2:]).reshape(-1)
         data["direction"] = {"x": dx, "z": dz}
         data["isFallen"] = self.is_fallen
         data["height"] = self.height_kf.state
-
         if self.find_zone(x, z) == 1:
             data["warning"] = True
         else:
             data["warning"] = False
-        
+        data1 = deepcopy(data)
+        data1["location"]["x"] = x + self.location_shift[0] + 0.5
         if ms_location:
             self.times["start_time"] = time()
         # stop
         if self.times["start_time"]:
-            result = [data] if time() - self.times["start_time"] < 2 else []
+            result = [data, data1] if time() - self.times["start_time"] < 2 else []
         else:
             result = []
         return result
@@ -63,6 +69,7 @@ class DTEngine():
         neck, hip, ankle = self.simplify_joints(joints)
 
         posture = None
+        fall_location = None
         if neck and hip:
             neck_hip_slope = abs((hip[1] - neck[1]) / (hip[0] - neck[0] + 1e-9))
             if neck_hip_slope < 0.5:
@@ -79,15 +86,16 @@ class DTEngine():
 
         if neck and ankle:
             neck_ankle_slope = abs((ankle[1] - neck[1]) / (ankle[0] - neck[0] + 1e-9))
-            if neck_ankle_slope < 0.5:
-                posture = "fall"
-            elif neck_ankle_slope > 2:
+            # if neck_ankle_slope < 0.5:
+            #     posture = "fall"
+            if neck_ankle_slope > 2:
                 posture = "stand"
 
         location = self.mapper.map(ankle) if ankle else None
+        fall_location = self.mapper.map(hip) if hip and posture == "fall" else None
         height = self.mapper.height(location, neck) if location and neck and posture == "stand" else None
 
-        return location, height, posture
+        return location, height, posture, fall_location
 
     @staticmethod
     def simplify_joints(joints):
