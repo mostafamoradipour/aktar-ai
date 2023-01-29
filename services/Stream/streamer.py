@@ -1,4 +1,5 @@
 from modules.Aktar_C.streaming import StreamerV1, resize
+from threading import Thread
 import numpy as np
 import cv2
 
@@ -9,6 +10,7 @@ class streamEngine():
         self.opened = False
 
     def stream(self):
+        cv2.namedWindow("Aktar-Stream", cv2.WINDOW_NORMAL)
         while self.running:
             frame = None
             if self.stream_urls[0]:
@@ -32,7 +34,7 @@ class streamEngine():
                         frame1 = np.hstack((frame2, frame3))
                         frame = np.vstack((frame, frame1))
             if ret0:
-                frame = resize(frame, width=1800)
+                # frame = resize(frame, width=1800)
                 cv2.imshow("Aktar-Stream", frame)
                 self.opened = True
             if cv2.waitKey(1) == ord('q'):
@@ -56,4 +58,11 @@ class streamEngine():
             self.streamers.append(streamer)
         del streamer
         self.running = True
-        self.stream()
+        self.trd = Thread(target=self.stream)
+        self.trd.start()
+
+    def stop(self):
+        if not self.running:
+            return
+        self.running = False
+        self.trd.join()

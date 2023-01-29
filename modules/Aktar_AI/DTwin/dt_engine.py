@@ -28,7 +28,8 @@ class DTEngine():
         ms_location = None
         poses, _ = self.detector.detect_one(frame)
         if len(poses):
-            ms_location, ms_height, posture, fall_location = self.process_poses(poses)
+            for joints in poses:
+                ms_location, ms_height, posture, fall_location = self.process_joints(joints)
             if posture:
                 self.is_fallen = True if posture == "fall" else False
             self.height_kf.step(ms_height)
@@ -53,8 +54,10 @@ class DTEngine():
             data["warning"] = True
         else:
             data["warning"] = False
+
         data1 = deepcopy(data)
-        data1["location"]["x"] = x + self.location_shift[0] + 0.5
+        data1["location"]["x"] = x + self.location_shift[0] + 2
+
         if ms_location:
             self.times["start_time"] = time()
         # stop
@@ -64,8 +67,8 @@ class DTEngine():
             result = []
         return result
 
-    def process_poses(self, poses):
-        joints = poses[0]
+    def process_joints(self, joints):
+
         neck, hip, ankle = self.simplify_joints(joints)
 
         posture = None

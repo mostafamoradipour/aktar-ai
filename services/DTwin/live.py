@@ -7,6 +7,7 @@ class LiveDT():
     def __init__(self, cfg, url):
         self.engine = DTEngine(cfg)
         self.vid = StreamerV1(url)
+        self.vid.thread.start()
         self.database = DTdatabase(cfg['mongodb'])
 
     def generator(self):

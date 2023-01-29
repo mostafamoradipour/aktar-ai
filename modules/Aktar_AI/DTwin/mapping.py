@@ -14,6 +14,7 @@ class PointMapper(object):
         dist = np.array(dist)
         imagePoints = np.load(cfg['image_points']).astype('float32')
         ret, rvec, tvec = cv2.solvePnP(real_points, imagePoints, mtx, dist)
+
         R, _ = cv2.Rodrigues(rvec)
         P = mtx @ np.hstack((R, tvec))
         self.P1 = np.concatenate((P[:, 0:1], P[:, 2:]), axis=1)
@@ -28,7 +29,6 @@ class PointMapper(object):
         return (x , z)
 
     def height(self, foot_loc, head_point):
-
         P3 = np.array([[head_point[0], head_point[1], 1]]).T
         L = np.array([480 - foot_loc[0], 635 - foot_loc[1], 1])
         b = -1 * self.P1 @ L

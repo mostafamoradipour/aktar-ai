@@ -208,7 +208,7 @@ def play():
 
 @app.route("/stop", methods=["GET"])
 def stop():
-    stream_engine.running = False
+    stream_engine.stop()
     return {"message": "playing is stoped"}, response_code["ok"]
 
 def create_app():

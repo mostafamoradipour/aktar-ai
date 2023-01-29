@@ -12,7 +12,10 @@ class CDManager():
     def run(self):
         vids = []
         for cam_url in self.cam_urls:
-            vids.append(StreamerV1(cam_url))
+            streamer = StreamerV1(cam_url)
+            streamer.thread.start()
+            vids.append(streamer)
+            del streamer
         while self.running:
             for vid in vids:
                 ret, frame = vid.read_last()
