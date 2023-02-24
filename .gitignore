@@ -1,4 +1,5 @@
 interface
+*.vscode
 *.onnx
 *.pyc
 *.mp4
