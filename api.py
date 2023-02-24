@@ -2,8 +2,6 @@ from flask import Flask, request, jsonify
 from datetime import datetime
 from flask_sock import Sock
 from flask_cors import CORS
-from waitress import serve
-import websockets
 import argparse
 import yaml
 import json
@@ -12,6 +10,7 @@ from services.Stream.streamer import streamEngine
 from services.DataBase.aktar_api import apiDB
 from services.CDataM.manager import CDManager
 from services.DTwin.live import LiveDT
+
 
 app = Flask(__name__)
 sock = Sock(app)
@@ -34,6 +33,7 @@ print("CDM and DT of Aktar reseted!")
 # Initialize AI engines
 stream_engine = streamEngine()
 live_dt = LiveDT(cfg["dt"], cam_col.get_docs()[1]["url"])
+# live_dt = LiveDT(cfg["dt"], "outpy.avi")
 cdm_engine = CDManager(cfg["cdm"])
 
 
@@ -65,10 +65,10 @@ def cdm(ws):
 @sock.route('/dt')
 def dt_live(ws):
     for data in live_dt.generator():
-        try:
-            ws.send(json.dumps({"data": data}))
-        except websockets.exceptions.ConnectionClosedError:
-            return
+        # try:
+        ws.send(json.dumps({"data": data}))
+        # except websockets.exceptions.ConnectionClosedError:
+            # return
 
 
 @app.route("/get", methods=["GET"])

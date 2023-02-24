@@ -108,6 +108,7 @@ class PersonVerifier(object):
             return False
         person, person_boxes = self.body_detector.detect_one(img, img_hsv)
         faces, face_boxes = self.face_detector.detect_one(img, img_hsv)
+        # faces, face_boxes = None, None
         matched_indices = np.empty(shape=(0, 2))
         if face_boxes != None and person_boxes != None:
             iou_matrix = assign_face_person(person_boxes, face_boxes)

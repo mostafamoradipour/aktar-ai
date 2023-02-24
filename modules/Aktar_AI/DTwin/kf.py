@@ -108,4 +108,4 @@ class KalmanFilter(object):
             z = np.array(ms_location).reshape((2, 1))
             self.predict()
             self.update(z)
-            self.walking = True if np.linalg.norm(self.x[2:]) > 5 else False
+            self.walking = True if np.linalg.norm(self.x[2:]) > 10 else False

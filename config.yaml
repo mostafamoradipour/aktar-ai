@@ -39,11 +39,11 @@ cdm:
     top_pad: 0
     right_pad: 0
     bottom_pad: 0
-    weights: modules/Aktar_AI/DetRec/verification/detection/weights/crowdhuman_yolov5m.onnx
+    weights: modules/Aktar_AI/DetRec/detection/weights/crowdhuman_yolov5m.onnx
 
   body_extraction:
     device: gpu
-    weights: modules/Aktar_AI/DetRec/verification/extraction/weights/osnet_x0_25_msmt17.onnx
+    weights: modules/Aktar_AI/DetRec/extraction/weights/osnet_x0_25_msmt17.onnx
     input_size: [128, 256]
 
   face_detection:
@@ -59,11 +59,11 @@ cdm:
       top_pad: 0
       right_pad: 0
       bottom_pad: 0
-      weights: modules/Aktar_AI/DetRec/verification/detection/weights/yolov5n-face.onnx
+      weights: modules/Aktar_AI/DetRec/detection/weights/yolov5n-face.onnx
 
   face_extraction:
     device: gpu
-    weights: modules/Aktar_AI/DetRec/verification/extraction/weights/w600k_mbf.onnx
+    weights: modules/Aktar_AI/DetRec/extraction/weights/w600k_mbf.onnx
     input_size: [112, 112]
 
   mongodb:

@@ -1,4 +1,4 @@
-from modules.Aktar_AI.DetRec.verification import PersonVerifier
+from modules.Aktar_AI.DetRec import PersonVerifier
 from modules.Aktar_C.streaming import StreamerV1
 from threading import Thread
 

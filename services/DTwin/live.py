@@ -1,16 +1,17 @@
-from modules.Aktar_C.streaming import StreamerV1
 from modules.Aktar_OS.DataBase.dt_db import DTdatabase
 from modules.Aktar_AI.DTwin.dt_engine import DTEngine
+from modules.Aktar_C.streaming import StreamerV1
 
 
 class LiveDT():
     def __init__(self, cfg, url):
         self.engine = DTEngine(cfg)
         self.vid = StreamerV1(url)
-        self.vid.thread.start()
+        # self.vid.thread.start()
         self.database = DTdatabase(cfg['mongodb'])
 
     def generator(self):
+        self.vid.thread.start()
         while True:
             ret, frame = self.vid.read_last()
             if ret:

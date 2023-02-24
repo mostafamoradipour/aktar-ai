@@ -19,17 +19,54 @@ class DTEngine():
         self.tracking_kf = KalmanFilter()
         self.pose_id = 0
         self.is_fallen = False
-        self.location_shift = [2.8, -.8]
-        # self.location_shift = [0, 0]
+        # self.location_shift = [2.8, -.8]
+        self.location_shift = [0, 0]
         self.times = {"start_time": None}
+        self.trks = []
 
     def run(self, frame):
         data = self.standing_data.copy()
         ms_location = None
         poses, _ = self.detector.detect_one(frame)
+        bones = []
         if len(poses):
             for joints in poses:
+                if (joints[2] > 0).all() and (joints[3] > 0).all():
+                    vector_8 = (joints[3]-joints[2]).tolist()
+                    vector_8[0] = abs(vector_8[0])
+                    bones.append({"id": 8, "vector": vector_8})
+                if (joints[3] > 0).all() and (joints[4] > 0).all():
+                    vector_9 = (joints[4]-joints[3]).tolist()
+                    vector_9[0] = abs(vector_9[0])
+                    bones.append({"id": 9, "vector": vector_9})
+                if (joints[8] > 0).all() and (joints[9] > 0).all():
+                    vector_16 = (joints[9]-joints[8]).tolist()
+                    vector_16[0] = abs(vector_16[0])
+                    bones.append({"id": 16, "vector": vector_16})
+                if (joints[9] > 0).all() and (joints[10] > 0).all():
+                    vector_17 = (joints[10]-joints[9]).tolist()
+                    vector_17[0] = abs(vector_17[0])
+                    bones.append({"id": 17, "vector": vector_17})
+
+                if (joints[5] > 0).all() and (joints[6] > 0).all():
+                    vector_23 = (joints[6]-joints[5]).tolist()
+                    vector_23[0] = abs(vector_23[0])
+                    bones.append({"id": 23, "vector": vector_23})
+                if (joints[11] > 0).all() and (joints[12] > 0).all():
+                    vector_28 = (joints[12]-joints[11]).tolist()
+                    vector_28[0] = abs(vector_28[0])
+                    bones.append({"id": 28, "vector": vector_28})
+                # if (joints[8] > 0).all() and (joints[9] > 0).all():
+                #     vector_16 = (joints[9]-joints[8]).tolist()
+                #     vector_16[0] = abs(vector_16[0])
+                #     bones.append({"id": 16, "vector": vector_16})
+                # if (joints[9] > 0).all() and (joints[10] > 0).all():
+                #     vector_17 = (joints[10]-joints[9]).tolist()
+                #     vector_17[0] = abs(vector_17[0])
+                #     bones.append({"id": 17, "vector": vector_17})
+
                 ms_location, ms_height, posture, fall_location = self.process_joints(joints)
+                # self.update_trks(ms_location, ms_height, posture, fall_location)
             if posture:
                 self.is_fallen = True if posture == "fall" else False
             self.height_kf.step(ms_height)
@@ -50,6 +87,7 @@ class DTEngine():
         data["direction"] = {"x": dx, "z": dz}
         data["isFallen"] = self.is_fallen
         data["height"] = self.height_kf.state
+        data["joints"] = bones
         if self.find_zone(x, z) == 1:
             data["warning"] = True
         else:
@@ -66,6 +104,11 @@ class DTEngine():
         else:
             result = []
         return result
+
+    def update_trks(self, ms_location, ms_height, posture, fall_location):
+        for trk in self.trks:
+            if abs(trk.location - ms_location) < self.max_dp:
+                pass
 
     def process_joints(self, joints):
 

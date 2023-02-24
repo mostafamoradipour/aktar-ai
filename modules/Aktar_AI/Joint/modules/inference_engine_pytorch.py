@@ -44,4 +44,3 @@ class InferenceEnginePyTorch:
     def _normalize(img, img_mean, img_scale):
         normalized_img = (img.astype(np.float32) - img_mean) * img_scale
         return normalized_img
-
