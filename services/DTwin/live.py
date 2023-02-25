@@ -4,9 +4,9 @@ from modules.Aktar_C.streaming import StreamerV1
 
 
 class LiveDT():
-    def __init__(self, cfg, url):
-        self.engine = DTEngine(cfg)
-        self.vid = StreamerV1(url)
+    def __init__(self, cfg):
+        self.engine = DTEngine(cfg["engine"])
+        self.vid = StreamerV1(cfg["cam_url"])
         # self.vid.thread.start()
         self.database = DTdatabase(cfg['mongodb'])
 

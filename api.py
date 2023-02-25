@@ -32,7 +32,7 @@ print("CDM and DT of Aktar reseted!")
 
 # Initialize AI engines
 stream_engine = streamEngine()
-live_dt = LiveDT(cfg["dt"], cam_col.get_docs()[1]["url"])
+live_dt = LiveDT(cfg["dt"])
 # live_dt = LiveDT(cfg["dt"], "outpy.avi")
 cdm_engine = CDManager(cfg["cdm"])
 

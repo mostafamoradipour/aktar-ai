@@ -74,17 +74,20 @@ cdm:
     queue_maxsize: 10
 
 dt:
-  walking_data: modules/Aktar_AI/DTwin/assets/walking.json
-  standing_data: modules/Aktar_AI/DTwin/assets/standing.json
+  engine:
+    walking_data: modules/Aktar_AI/DTwin/assets/walking.json
+    standing_data: modules/Aktar_AI/DTwin/assets/standing.json
 
-  mapping:
-    calibration_file: modules/Aktar_AI/DTwin/assets/calibration.yaml
-    image_points: modules/Aktar_AI/DTwin/assets/imagePoints.npy
+    mapping:
+      calibration_file: modules/Aktar_AI/DTwin/assets/calibration.yaml
+      image_points: modules/Aktar_AI/DTwin/assets/imagePoints.npy
 
-  joint_detection:
-    device: gpu
-    weights: modules/Aktar_AI/Joint/models/human-pose-estimation-3d.pth
-    
+    joint_detection:
+      device: gpu
+      weights: modules/Aktar_AI/Joint/models/human-pose-estimation-3d.pth
+
+  cam_url: "rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800"
+
   mongodb:
     host: 0.0.0.0
     port: 27017

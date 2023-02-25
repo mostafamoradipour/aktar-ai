@@ -10,4 +10,4 @@ interface
 *.pth
 *.trt
 *.glb
-utils
+./utils
