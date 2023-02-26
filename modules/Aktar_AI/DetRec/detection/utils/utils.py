@@ -5,27 +5,27 @@ import cv2
 def ignore_boxes(img_hsv, boxes, img_shape, ltrb = [30, 10, 20, 10], min_area = 1000, min_ratio = 1.4, max_ratio = 4, min_intensity = 40, ):
     ### Filter by margin
     w, h = img_shape
-    x1_y1_min = (boxes[0][:, :2] < [ltrb[0], ltrb[1]])
-    x2_y2_max = (boxes[0][:, 2:4] > ([h - ltrb[2], w - ltrb[2]]) )
+    # import pdb; pdb.set_trace()
+    x1_y1_min = (boxes[:, :2] < [ltrb[0], ltrb[1]])
+    x2_y2_max = (boxes[:, 2:4] > ([h - ltrb[2], w - ltrb[2]]))
 
     margin_indexes = x1_y1_min.sum(axis=1) + x2_y2_max.sum(axis=1)
     margin_indexes = margin_indexes < 1
 
     ### Filter by aspect ratio and area 
-    good_area_indexes = (boxes[0][:,3] - boxes[0][:,1]) * (boxes[0][:,2] - boxes[0][:,0])> min_area
+    good_area_indexes = (boxes[:,3] - boxes[:,1]) * (boxes[:,2] - boxes[:,0])> min_area
     
-    aspect_ratio = (boxes[0][:,3] - boxes[0][:,1]) / (boxes[0][:,2] - boxes[0][:,0])
+    aspect_ratio = (boxes[:,3] - boxes[:,1]) / (boxes[:,2] - boxes[:,0])
     good_ratio_indexes = logical_and((aspect_ratio <max_ratio), (aspect_ratio > min_ratio))
 
     # Filter by intensity
-    intensity_boxes = array([mean(img_hsv[int(i[1]) : int(i[3]), int(i[0]) : int(i[2]), 2]) for i in boxes[0]])
+    intensity_boxes = array([mean(img_hsv[int(i[1]) : int(i[3]), int(i[0]) : int(i[2]), 2]) for i in boxes])
     good_intensity_index = intensity_boxes > min_intensity  
   
     indexes = logical_and(good_ratio_indexes, good_area_indexes, margin_indexes)
     indexes = logical_and(indexes, good_intensity_index)
 
-    
-    return   [boxes[0][indexes]] #boxes[indexes]
+    return   boxes[indexes]
 
 
 def get_box(img, xywh):

@@ -1,4 +1,4 @@
-interface
+./assets
 *.vscode
 *.onnx
 *.pyc
@@ -10,4 +10,3 @@ interface
 *.pth
 *.trt
 *.glb
-./utils
