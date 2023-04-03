@@ -1,42 +1,26 @@
 import numpy as np
 
 
-class static_kf(object):
-    def __init__(self, init_state):
-        self.state = init_state
+class StaticKF(object):
+    def __init__(self, init_height=None):
+        if init_height:
+            self.x = init_height
+        else:
+            self.x = 180.
         self.iter = 1 
-    
-    def step(self, ms_height):
+
+    def update(self, ms_height):
         if ms_height:
             kalman_gain = 1 / self.iter
-            inovation = ms_height - self.state
-            self.state = self.state + kalman_gain * inovation
+            inovation = ms_height - self.x
+            self.x = self.x + kalman_gain * inovation
             self.iter += 1
 
 
-class dynamic_kf(object):
-    def __init__(self, init_state):
-        self.location = init_state[0]
-        self.direction = init_state[1]
-        self.walking = False
-
-    def step(self, ms_location):
-        if ms_location:
-            direction =  np.array(ms_location) - self.location
-            self.walking = True if np.linalg.norm(direction) > 0.05 else False
-            if self.walking:
-                self.location = ms_location
-                self.direction = direction
-
-    def reset(self, init_state):
-        self.location = init_state[0]
-        self.direction = init_state[1]
-        self.walking = False
-
-
-class KalmanFilter(object):
+class DynamicKF(object):
     def __init__(self,
-                 dt=0.2,
+                 init_location=None,
+                 dt=0.4,
                  u_x=1.,
                  u_y=1.,
                  std_acc=1.,
@@ -50,13 +34,13 @@ class KalmanFilter(object):
         :param x_std_meas: standard deviation of the measurement in x-direction
         :param y_std_meas: standard deviation of the measurement in y-direction
         """
-        self.walking = False
         # Define sampling time
         self.dt = dt
         # Define the  control input variables
         self.u = np.matrix([[u_x], [u_y]], dtype="float32")
         # Intial State
         self.x = np.matrix([[0.], [0.], [0.], [0.]], dtype="float32")
+        self.x[:2] = np.array(init_location, dtype="float32").reshape(2, 1)
         # Define the State Transition Matrix A
         self.A = np.matrix([[1., 0., self.dt, 0.],
                             [0., 1., 0., self.dt],
@@ -81,7 +65,7 @@ class KalmanFilter(object):
         # Initial Covariance Matrix
         self.P = np.eye(self.A.shape[1], dtype="float32")
 
-    def predict(self):
+    def _predict(self):
         # Update time state
         # x_k =Ax_(k-1) + Bu_(k-1)     Eq.(9)
         self.x = np.dot(self.A, self.x) + np.dot(self.B, self.u)
@@ -90,7 +74,7 @@ class KalmanFilter(object):
         self.P = np.dot(np.dot(self.A, self.P), self.A.T) + self.Q
         return self.x[0:2]
 
-    def update(self, z):
+    def _update(self, z):
         # S = H*P*H'+R
         S = np.dot(self.H, np.dot(self.P, self.H.T)) + self.R
         # Calculate the Kalman Gain
@@ -103,9 +87,8 @@ class KalmanFilter(object):
         self.P = (I - (K * self.H)) * self.P  # Eq.(13)
         return self.x[0:2]
 
-    def step(self, ms_location):
+    def update(self, ms_location):
         if ms_location:
             z = np.array(ms_location).reshape((2, 1))
-            self.predict()
-            self.update(z)
-            self.walking = True if np.linalg.norm(self.x[2:]) > 10 else False
+            self._predict()
+            self._update(z)

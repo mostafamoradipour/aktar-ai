@@ -1,7 +1,9 @@
-from service_af.verification.detection.person_detection import PersonDetector
-from service_cs.streaming import StreamerV1
+from scipy.optimize import linear_sum_assignment
+from copy import deepcopy
 import numpy as np
-import json
+
+
+INF_COST = 38
 
 
 def find_distance_angle_box(tlbr):
@@ -21,32 +23,6 @@ def find_distance_angle_box(tlbr):
     return x, z
 
 
-class locEngine_box():
-    def __init__(self, cfg, url):
-        with open('service_dt/walk-data.json', 'r') as f:
-            self.walking_model = json.load(f)
-        self.detector = PersonDetector(cfg)
-        self.url = url
-
-    def find(self):
-        pose_id = 0
-        vid = StreamerV1(self.url)
-        x, z = 0, 0
-        while True:
-            ret, frame = vid.read_last()
-            if pose_id > 7:
-                pose_id = 0
-            data = self.walking_model[pose_id]
-            _, boxes = self.detector.detect_one(frame, None)
-            if boxes:
-                x, z = find_distance_angle_box(boxes[0])
-                z = z + 1.25
-                x  = x + 2.5
-            data["location"] = {"x": x+2.5, "z": z-0.5}
-            pose_id += 1
-            yield [data]
-
-
 def find_distance_angle_joint(loc_i):
     camera_alpha = 80 * np.pi / 180
     camera_beta = 45 * np.pi / 180
@@ -61,3 +37,96 @@ def find_distance_angle_joint(loc_i):
     z = camera_height * np.tan(np.pi / 2 - beta)
     x = -1 * z * np.tan(alpha)
     return x, z
+
+
+def euclidean_squared_distance(input1, input2):
+    """Computes euclidean squared distance.
+
+    Args:
+        input1 (numpy.array): 2-D poses matrix.
+        input2 (numpy.array): 2-D poses matrix.
+
+    Returns:
+        numpy.array: distance matrix.
+    """
+    input1 = input1.reshape(-1, 19*2)
+    input2 = input2.reshape(-1, 19*2)
+    m, n = input1.shape[0], input2.shape[0]
+    distmat = np.tile(np.power(input1, 2).sum(axis=1, keepdims=True), (1, n)) + \
+            np.tile(np.power(input2, 2).sum(axis=1, keepdims=True), (1, m)).T
+    distmat = distmat -2 * input1 @ input2.T
+    return distmat
+
+
+def euclidean_squared_distance2(input1, input2):
+    """Computes euclidean squared distance.
+
+    Args:
+        input1 (numpy.array): 2-D poses matrix.
+        input2 (numpy.array): 2-D poses matrix.
+
+    Returns:
+        numpy.array: distance matrix.
+    """
+    m, n = input1.shape[0], input2.shape[0]
+    distmat = np.zeros((m, n))
+    input1 = input1.reshape(-1, 19*2)
+    input2 = input2.reshape(-1, 19*2)
+    for i, inp1 in enumerate(input1):
+        for j, inp2 in enumerate(input2):
+            mask = np.array(inp1 > 0) * np.array(inp2 > 0)
+            inp1_masked, inp2_masked = inp1[mask], inp2[mask]
+            distmat[i, j] = np.linalg.norm(inp2_masked - inp1_masked) / len(inp1_masked)
+    return distmat
+
+
+def cosine_distance(input1, input2):
+    """Computes cosine distance.
+
+    Args:
+        input1 (numpy.array): 2-D poses matrix.
+        input2 (numpy.array): 2-D poses matrix.
+
+    Returns:
+        numpy.array: distance matrix.
+    """
+    norm_input1 = input1 / np.norm(input1, axis=1)
+    norm_input2 = input2 / np.norm(input2, axis=1)
+    distmat = norm_input1 @ norm_input2.T
+    return distmat
+
+
+def linear_assignment(cost, row_ids, col_ids):
+    """Solves the linear assignment problem.
+    Parameters
+    ----------
+    cost : ndarray
+        The cost matrix.
+    row_ids : List[int]
+        IDs that correspond to each row in the cost matrix.
+    col_ids : List[int]
+        IDs that correspond to each column in the cost matrix.
+    Returns
+    -------
+    List[tuple], List[int], List[int]
+        Matched row and column IDs, unmatched row IDs, and unmatched column IDs.
+    """
+    m_rows, m_cols = linear_sum_assignment(cost)
+    row_ids = np.fromiter(row_ids, int, len(row_ids))
+    col_ids = np.fromiter(col_ids, int, len(col_ids))
+    return _get_assignment_matches(cost, row_ids, col_ids, m_rows, m_cols)
+
+
+def _get_assignment_matches(cost, row_ids, col_ids, m_rows, m_cols):
+    unmatched_rows = list(set(range(cost.shape[0])) - set(m_rows))
+    unmatched_cols = list(set(range(cost.shape[1])) - set(m_cols))
+    unmatched_row_ids = [row_ids[row] for row in unmatched_rows]
+    unmatched_col_ids = [col_ids[col] for col in unmatched_cols]
+    matches = []
+    for row, col in zip(m_rows, m_cols):
+        if cost[row, col] < INF_COST:
+            matches.append((row_ids[row], col_ids[col]))
+        else:
+            unmatched_row_ids.append(row_ids[row])
+            unmatched_col_ids.append(col_ids[col])
+    return matches, unmatched_row_ids, unmatched_col_ids

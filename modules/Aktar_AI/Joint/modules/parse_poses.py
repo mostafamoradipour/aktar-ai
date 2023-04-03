@@ -145,11 +145,14 @@ def parse_poses(inference_results, input_scale, stride, fx):
 
     return np.array(translated_poses_3d), np.array(poses_2d_scaled)
 
-def parse_poses_2d(inference_results, input_scale, stride, is_video=False):
+
+def parse_poses_2d(inference_results, input_scale, stride, conf_thresh=5):
     global previous_poses_2d
-    poses_3d, poses_2d, features_shape = get_root_relative_poses(inference_results)
-    poses_2d_scaled = []
+    _, poses_2d, _ = get_root_relative_poses(inference_results)
+    poses = []
     for pose_2d in poses_2d:
+        if pose_2d[-1] < conf_thresh:
+            continue
         num_kpt = (pose_2d.shape[0] - 1) // 3
         pose_2d_scaled = np.ones(pose_2d.shape[0], dtype=np.float32) * -1  # +1 for pose confidence
         for kpt_id in range(num_kpt):
@@ -158,20 +161,6 @@ def parse_poses_2d(inference_results, input_scale, stride, is_video=False):
                 pose_2d_scaled[kpt_id * 3 + 1] = int(pose_2d[kpt_id * 3 + 1] * stride / input_scale)
                 pose_2d_scaled[kpt_id * 3 + 2] = pose_2d[kpt_id * 3 + 2]
         pose_2d_scaled[-1] = pose_2d[-1]
-        poses_2d_scaled.append(pose_2d_scaled)
-
-    if is_video:  # track poses ids
-        current_poses_2d = []
-        for pose_id in range(len(poses_2d_scaled)):
-            pose_keypoints = np.ones((Pose.num_kpts, 2), dtype=np.int32) * -1
-            for kpt_id in range(Pose.num_kpts):
-                if poses_2d_scaled[pose_id][kpt_id * 3] != -1.0:  # keypoint was found
-                    pose_keypoints[kpt_id, 0] = int(poses_2d_scaled[pose_id][kpt_id * 3 + 0])
-                    pose_keypoints[kpt_id, 1] = int(poses_2d_scaled[pose_id][kpt_id * 3 + 1])
-            pose = Pose(pose_keypoints, poses_2d_scaled[pose_id][-1])
-            current_poses_2d.append(pose)
-        propagate_ids(previous_poses_2d, current_poses_2d)
-        previous_poses_2d = current_poses_2d
-
-    return  np.array(poses_2d_scaled)
-
+        pose = pose_2d_scaled[:-1].reshape(19, 3)[:, :2]
+        poses.append(pose)
+    return  np.array(poses)

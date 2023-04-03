@@ -1,121 +1,92 @@
-from modules.Aktar_AI.Joint.joint_detection import JointDetector
-from modules.Aktar_AI.DTwin.kf import static_kf, KalmanFilter
-from modules.Aktar_AI.DTwin.mapping import PointMapper
 from copy import deepcopy
-from time import time
 import numpy as np
 import json
+
+from modules.Aktar_AI.DTwin.utils.utils import euclidean_squared_distance2, linear_assignment
+from modules.Aktar_AI.Joint.joint_detection import JointDetector
+from modules.Aktar_AI.DTwin.mapping import PointMapper
+from modules.Aktar_AI.DTwin.track import Track
 
 
 class DTEngine():
     def __init__(self, cfg):
-        with open(cfg['walking_data'], 'r') as f:
-            self.walking_data = json.load(f)
-        with open(cfg['standing_data'], 'r') as f:
-            self.standing_data = json.load(f) 
+        with open(cfg['pose_data'], 'r') as f:
+            self.pose_data = json.load(f)
         self.detector = JointDetector(cfg['joint_detection'])
         self.mapper = PointMapper(cfg['mapping'])
-        self.height_kf = static_kf(init_state=180.)
-        self.tracking_kf = KalmanFilter()
-        self.pose_id = 0
-        self.is_fallen = False
-        # self.location_shift = [2.8, -.8]
-        self.location_shift = [0, 0]
-        self.times = {"start_time": None}
-        self.trks = []
+        self.tracks = {}
+        self.deactive_tracks = {}
+        self.list_of_ids = list(range(1000, 0, -1))
 
-    def run(self, frame):
-        data = self.standing_data.copy()
-        ms_location = None
-        poses, _ = self.detector.detect_one(frame)
-        bones = []
-        if len(poses):
-            for joints in poses:
-                if (joints[2] > 0).all() and (joints[3] > 0).all():
-                    vector_8 = (joints[3]-joints[2]).tolist()
-                    vector_8[0] = abs(vector_8[0])
-                    bones.append({"id": 8, "vector": vector_8})
-                if (joints[3] > 0).all() and (joints[4] > 0).all():
-                    vector_9 = (joints[4]-joints[3]).tolist()
-                    vector_9[0] = abs(vector_9[0])
-                    bones.append({"id": 9, "vector": vector_9})
-                if (joints[8] > 0).all() and (joints[9] > 0).all():
-                    vector_16 = (joints[9]-joints[8]).tolist()
-                    vector_16[0] = abs(vector_16[0])
-                    bones.append({"id": 16, "vector": vector_16})
-                if (joints[9] > 0).all() and (joints[10] > 0).all():
-                    vector_17 = (joints[10]-joints[9]).tolist()
-                    vector_17[0] = abs(vector_17[0])
-                    bones.append({"id": 17, "vector": vector_17})
+    def step(self, frame1, frame2):
+        poses = self.detector.detect_one(frame1)
 
-                if (joints[5] > 0).all() and (joints[6] > 0).all():
-                    vector_23 = (joints[6]-joints[5]).tolist()
-                    vector_23[0] = abs(vector_23[0])
-                    bones.append({"id": 23, "vector": vector_23})
-                if (joints[11] > 0).all() and (joints[12] > 0).all():
-                    vector_28 = (joints[12]-joints[11]).tolist()
-                    vector_28[0] = abs(vector_28[0])
-                    bones.append({"id": 28, "vector": vector_28})
-                # if (joints[8] > 0).all() and (joints[9] > 0).all():
-                #     vector_16 = (joints[9]-joints[8]).tolist()
-                #     vector_16[0] = abs(vector_16[0])
-                #     bones.append({"id": 16, "vector": vector_16})
-                # if (joints[9] > 0).all() and (joints[10] > 0).all():
-                #     vector_17 = (joints[10]-joints[9]).tolist()
-                #     vector_17[0] = abs(vector_17[0])
-                #     bones.append({"id": 17, "vector": vector_17})
+        est_ids = list(range(len(poses)))
+        trk_ids = list(self.tracks.keys())
 
-                ms_location, ms_height, posture, fall_location = self.process_joints(joints)
-                # self.update_trks(ms_location, ms_height, posture, fall_location)
-            if posture:
-                self.is_fallen = True if posture == "fall" else False
-            self.height_kf.step(ms_height)
-            self.tracking_kf.step(ms_location)
-            if self.tracking_kf.walking:
-                self.pose_id = (self.pose_id + 1) % 8
-                data = self.walking_data[self.pose_id]
-            else:
-                data = self.standing_data
-            if fall_location:
-                self.fall_location = fall_location
-        if self.is_fallen:
-            x, z = self.fall_location[0] / 100, self.fall_location[1] /  100
+        if len(est_ids) and len(trk_ids):
+            prev_poses = np.array([track.pose for track in self.tracks.values()])
+            cost = euclidean_squared_distance2(prev_poses, poses)            
+            matches, u_trk_ids, u_est_ids = linear_assignment(cost, trk_ids, est_ids)
         else:
-            x, z =  np.array(self.tracking_kf.x[:2]).reshape(-1) / 100
-        data["location"] = {"x": x+self.location_shift[0], "z": z+self.location_shift[1]}
-        dx, dz =  np.array(self.tracking_kf.x[2:]).reshape(-1)
-        data["direction"] = {"x": dx, "z": dz}
-        data["isFallen"] = self.is_fallen
-        data["height"] = self.height_kf.state
-        data["joints"] = bones
-        if self.find_zone(x, z) == 1:
-            data["warning"] = True
-        else:
-            data["warning"] = False
+            matches, u_trk_ids, u_est_ids = [], trk_ids, est_ids
 
-        data1 = deepcopy(data)
-        data1["location"]["x"] = x + self.location_shift[0] + 2
+        for trk_id, est_id in matches:
+            pose = poses[est_id]
+            simplified_pose = self.simplify_pose(pose)
+            neck, _, ankle = simplified_pose
+            posture = self.process_pose(simplified_pose)
+            ms_location = self.mapper.map(ankle) if ankle else None
+            if not ms_location:
+                u_trk_ids.append(trk_id)
+                continue
+            ms_height = self.mapper.height(ms_location, neck) if ms_location and neck and posture == "stand" else None
+            self.tracks[trk_id].update(pose, ms_location, ms_height, posture)
 
-        if ms_location:
-            self.times["start_time"] = time()
-        # stop
-        if self.times["start_time"]:
-            result = [data, data1] if time() - self.times["start_time"] < 2 else []
-        else:
-            result = []
+        for est_id in u_est_ids:
+            pose = poses[est_id]
+            simplified_pose = self.simplify_pose(pose)
+            neck, _, ankle = simplified_pose
+            posture = self.process_pose(simplified_pose)
+            ms_location = self.mapper.map(ankle) if ankle else None
+            if not ms_location:
+                continue
+            ms_height = self.mapper.height(ms_location, neck) if neck and posture == "stand" else None
+            trk_id = self.list_of_ids.pop()
+            self.tracks[trk_id] = Track(trk_id, pose, ms_location, ms_height)
+
+        for trk_id in u_trk_ids:
+            self.tracks[trk_id].missed()       
+
+        for trk_id, track in self.tracks.copy().items():
+            if not track.active:
+                if track.confirmed:
+                    self.deactive_tracks[trk_id] = track
+                else:
+                    self.list_of_ids.append(trk_id)
+                self.tracks.pop(trk_id)
+
+        # Prepare result for UI
+        result = []
+        for track in self.tracks.values():
+            if not track.confirmed:
+                continue
+            data = deepcopy(self.pose_data)[track.pose_id]
+            data["id"] = track.id
+            data["isWalking"] = track.isWalking
+            data["joints"] = [] if track.isWalking else self.extract_bones(track.pose)
+            data["isFallen"] = track.isFallen
+            data["location"] = track.location
+            data["direction"] = track.direction
+            data["height"] = track.height
+            data["warning"] = True if self.zone(track.location) == 1 else False
+            result.append(data)
+        print(len(result))
         return result
 
-    def update_trks(self, ms_location, ms_height, posture, fall_location):
-        for trk in self.trks:
-            if abs(trk.location - ms_location) < self.max_dp:
-                pass
-
-    def process_joints(self, joints):
-
-        neck, hip, ankle = self.simplify_joints(joints)
-
+    def process_pose(self, simplified_pose):
+        neck, hip, ankle = simplified_pose
         posture = None
-        fall_location = None
         if neck and hip:
             neck_hip_slope = abs((hip[1] - neck[1]) / (hip[0] - neck[0] + 1e-9))
             if neck_hip_slope < 0.5:
@@ -137,41 +108,65 @@ class DTEngine():
             if neck_ankle_slope > 2:
                 posture = "stand"
 
-        location = self.mapper.map(ankle) if ankle else None
-        fall_location = self.mapper.map(hip) if hip and posture == "fall" else None
-        height = self.mapper.height(location, neck) if location and neck and posture == "stand" else None
+        return posture
 
-        return location, height, posture, fall_location
-
-    @staticmethod
-    def simplify_joints(joints):
+    def simplify_pose(self, pose):
         """
         This method extracts neck, hip, and ankle points
         """
-        neck = joints[0].tolist() if (joints[0] > 0).all() else None
+        neck = pose[0].tolist() if (pose[0] > 0).all() else None
 
-        if (joints[5] > 0).all() and (joints[11] > 0).all():
-            hip = ((joints[5] + joints[11]) / 2).tolist()
-        elif (joints[5] > 0).all():
-            hip = joints[5].tolist()
-        elif (joints[11] > 0).all():
-            hip = joints[11].tolist()
+        if (pose[6] > 0).all() and (pose[12] > 0).all():
+            hip = ((pose[6] + pose[12]) / 2).tolist()
+        elif (pose[6] > 0).all():
+            hip = pose[6].tolist()
+        elif (pose[12] > 0).all():
+            hip = pose[12].tolist()
         else:
             hip = None
 
-        if (joints[7] > 0).all() and (joints[13] > 0).all():
-            ankle = ((joints[7] + joints[13]) / 2).tolist()
-        elif (joints[7] > 0).all():
-            ankle = joints[7].tolist()
-        elif (joints[13] > 0).all():
-            ankle = joints[13].tolist()
+        if (pose[8] > 0).all() and (pose[14] > 0).all():
+            ankle = ((pose[8] + pose[14]) / 2).tolist()
+        elif (pose[8] > 0).all():
+            ankle = pose[8].tolist()
+        elif (pose[14] > 0).all():
+            ankle = pose[14].tolist()
         else:
             ankle = None
 
-        return neck, hip, ankle
+        return (neck, hip, ankle)
 
-    @staticmethod
-    def find_zone(x, z):
+    def extract_bones(self, pose):
+        bones = []
+        if (pose[3] > 0).all() and (pose[4] > 0).all():
+            vector_8 = (pose[4]-pose[3]).tolist()
+            vector_8[0] = abs(vector_8[0])
+            bones.append({"id": 8, "vector": vector_8})
+        if (pose[4] > 0).all() and (pose[5] > 0).all():
+            vector_9 = (pose[5]-pose[4]).tolist()
+            vector_9[0] = abs(vector_9[0])
+            bones.append({"id": 9, "vector": vector_9})
+        if (pose[9] > 0).all() and (pose[10] > 0).all():
+            vector_16 = (pose[10]-pose[9]).tolist()
+            vector_16[0] = abs(vector_16[0])
+            bones.append({"id": 16, "vector": vector_16})
+        if (pose[10] > 0).all() and (pose[11] > 0).all():
+            vector_17 = (pose[11]-pose[10]).tolist()
+            vector_17[0] = abs(vector_17[0])
+            bones.append({"id": 17, "vector": vector_17})
+        if (pose[6] > 0).all() and (pose[7] > 0).all():
+            vector_23 = (pose[7]-pose[6]).tolist()
+            vector_23[0] = abs(vector_23[0])
+            bones.append({"id": 23, "vector": vector_23})
+        if (pose[12] > 0).all() and (pose[13] > 0).all():
+            vector_28 = (pose[13]-pose[12]).tolist()
+            vector_28[0] = abs(vector_28[0])
+            bones.append({"id": 28, "vector": vector_28})
+
+        return bones
+
+    def zone(self, location):
+        x, z =  location.values()
         if x > 2.5 and z > 4.5:
             return 1
         elif x < 2.5 and z > 4.5:

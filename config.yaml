@@ -23,13 +23,13 @@ cdm:
   competetive_body_ratio: False
   competetive_body_area: False
   # competetive_body_intensity: True
-  save_with_face: True
+  save_with_face: False
   competetive_face_ratio: False
   competetive_face_area: False
   body_detection:
     device: 'gpu'
     img_size: 640
-    conf_thres: 0.9
+    conf_thres: 0.8
     iou_thres: 0.4
     min_area: 1000
     min_ratio: 2.5
@@ -75,8 +75,7 @@ cdm:
 
 dt:
   engine:
-    walking_data: modules/Aktar_AI/DTwin/assets/walking.json
-    standing_data: modules/Aktar_AI/DTwin/assets/standing.json
+    pose_data: modules/Aktar_AI/DTwin/assets/pose_data.json
 
     mapping:
       calibration_file: modules/Aktar_AI/DTwin/assets/calibration.yaml
@@ -86,7 +85,11 @@ dt:
       device: gpu
       weights: modules/Aktar_AI/Joint/models/human-pose-estimation-3d.pth
 
-  cam_url: "rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800"
+  cam_urls:
+    0: rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800
+    1: rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800
+
+  warning_zone: {"x1": 2.5, "z1": 4.5, "x2": 4.8, "z2": 6.35}
 
   mongodb:
     host: 0.0.0.0

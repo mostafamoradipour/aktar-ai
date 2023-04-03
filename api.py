@@ -3,8 +3,10 @@ from datetime import datetime
 from flask_sock import Sock
 from flask_cors import CORS
 import argparse
+import base64
 import yaml
 import json
+import cv2
 
 from services.Stream.streamer import streamEngine
 from services.DataBase.aktar_api import apiDB
@@ -20,6 +22,7 @@ CORS(app)
 # Define necessary databases 
 with open('config.yaml', 'r') as f:
     cfg = yaml.safe_load(f)
+
 response_code = cfg["response_code"]
 cam_col = apiDB(cfg["stream"]["mongodb"])
 cdm_col = apiDB(cfg["cdm"]["mongodb"])
@@ -35,6 +38,32 @@ stream_engine = streamEngine()
 live_dt = LiveDT(cfg["dt"])
 # live_dt = LiveDT(cfg["dt"], "outpy.avi")
 cdm_engine = CDManager(cfg["cdm"])
+
+
+@app.route("/frame", methods=["GET"])
+def get_frame():
+    # req = request.get_json()
+    # try:
+    #     cam_url = req["url"]
+    #     assert isinstance(cam_url, str)
+    # except:
+    #     return {"message": "You send a bad request"}, response_code["bad_request"]  
+    try:
+        cam = cv2.VideoCapture(cfg["dt"]["cam_url"])
+        ret, frame = cam.read()
+        assert ret, "failed to read the url"
+        _, im_arr = cv2.imencode('.jpg', frame)
+        im_bytes = im_arr.tobytes()
+        im_b64 = base64.b64encode(im_bytes).decode()
+        return jsonify({"frame": im_b64}), response_code["ok"]
+
+    except:
+        return {"message": "failed to read the url"}, response_code["bad_request"]
+
+
+@app.route("/dt", methods=["GET"])
+def get_warning_zone():
+    return jsonify(cfg["dt"]["warning_zone"]), response_code["ok"]
 
 
 @sock.route('/cdm')

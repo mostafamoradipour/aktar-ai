@@ -5,6 +5,7 @@ from cv2 import resize as cv_resize
 from urllib.parse import urlparse
 from numpy import ndarray, uint8
 from collections import deque
+from time import sleep
 import sys
 import gi
 gi.require_version('Gst', '1.0')
@@ -64,12 +65,12 @@ class StreamerV1(object):
         self.exit_event = Event()
         self.cond = Condition()
         self.thread = Thread(target=self.read_input_uri, name='Streamer')
-        # self.thread.start()
 
     def read_input_uri(self):
         counter = 0
         while not self.exit_event.is_set():
             ret, frame = self.stream.read()
+            # sleep(0.083333333+0.5)
             counter += 1
             with self.cond:
                 if not ret:
