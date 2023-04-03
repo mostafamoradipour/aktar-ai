@@ -3,7 +3,7 @@ import numpy as np
 import json
 
 from modules.Aktar_AI.DTwin.utils.utils import euclidean_squared_distance2, linear_assignment
-from modules.Aktar_AI.Joint.joint_detection import JointDetector
+from modules.Aktar_AI.Pose.pose_estimation import PoseEstimator
 from modules.Aktar_AI.DTwin.mapping import PointMapper
 from modules.Aktar_AI.DTwin.track import Track
 
@@ -12,14 +12,14 @@ class DTEngine():
     def __init__(self, cfg):
         with open(cfg['pose_data'], 'r') as f:
             self.pose_data = json.load(f)
-        self.detector = JointDetector(cfg['joint_detection'])
+        self.estimator = PoseEstimator(cfg['joint_detection'])
         self.mapper = PointMapper(cfg['mapping'])
         self.tracks = {}
         self.deactive_tracks = {}
         self.list_of_ids = list(range(1000, 0, -1))
 
-    def step(self, frame1, frame2):
-        poses = self.detector.detect_one(frame1)
+    def step(self, frame):
+        poses = self.estimator(frame)
 
         est_ids = list(range(len(poses)))
         trk_ids = list(self.tracks.keys())

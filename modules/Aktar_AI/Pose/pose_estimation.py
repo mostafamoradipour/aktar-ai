@@ -5,11 +5,11 @@ import numpy as np
 import cv2
 
 
-class JointDetector(object):
+class PoseEstimator(object):
     def __init__(self, cfg):
         self.net = InferenceEnginePyTorch(cfg["weights"], cfg["device"])
 
-    def detect_one(self, img):
+    def __call__(self, img):
         stride = 8
         base_height = 256
         conf_thresh = 5
