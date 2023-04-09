@@ -19,6 +19,7 @@ class DTEngine():
         self.missed_tracks = {}
         self.fallen_tracks = {}
         self.list_of_ids = list(range(1000, 0, -1))
+        self.congestion_map = np.zeros((20, 20), dtype="float") # for a 10 by 10 square meter place, resolution: 1 meter, stride = 0.5 meter
 
     def step(self, frame):
         poses = self.estimator(frame)
@@ -44,6 +45,16 @@ class DTEngine():
                 continue
             ms_height = self.mapper.height(ms_location, neck) if ms_location and neck and posture == "stand" else None
             self.tracks[trk_id].update(pose, ms_location, ms_height, posture)
+
+            # update congestion map
+            track = self.tracks[trk_id]
+            if track.confirmed:
+                x, z = track.location_filter.x[:2] // 50
+                self.congestion_map[x, z] += 1.0
+                if z > 0 or x > 0:
+                    self.congestion_map[max(0, x-1), max(0, z-1)] += 0.75
+                if z < 19 or x < 19:
+                    self.congestion_map[min(x+1, 19), min(z+1, 19)] += 0.75
 
         for est_id in u_est_ids:
             pose = poses[est_id]
@@ -76,6 +87,11 @@ class DTEngine():
                 else:
                     self.list_of_ids.append(trk_id)
                 self.tracks.pop(trk_id)
+
+        # Congestion Alert
+        self.congestion_map[self.congestion_map <= 1] = 0.0
+        if self.congestion_map.sum() > 1:
+            print("Congestion !!!")
 
         # Prepare result for UI
         result = []
