@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from modules.Aktar_AI.Joint.modules.conv import conv, conv_dw, conv_dw_no_bn
+from modules.Aktar_AI.Pose.modules.conv import conv, conv_dw, conv_dw_no_bn
 
 
 class Cpm(nn.Module):

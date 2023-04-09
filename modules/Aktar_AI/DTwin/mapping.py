@@ -1,4 +1,3 @@
-from modules.Aktar_AI.DTwin.utils.realPoints import real_points
 import numpy as np
 import yaml
 import cv2
@@ -13,8 +12,9 @@ class PointMapper(object):
         mtx = np.array(mtx)
         dist = np.array(dist)
         imagePoints = np.load(cfg['image_points']).astype('float32')
-        ret, rvec, tvec = cv2.solvePnP(real_points, imagePoints, mtx, dist)
-
+        physicalPoints = np.load(cfg['physical_points']).astype('float32')
+        ret, rvec, tvec = cv2.solvePnP(physicalPoints, imagePoints, mtx, dist)
+        assert ret, "error in calculating tvec and rvec"
         R, _ = cv2.Rodrigues(rvec)
         P = mtx @ np.hstack((R, tvec))
         self.P1 = np.concatenate((P[:, 0:1], P[:, 2:]), axis=1)
@@ -24,13 +24,12 @@ class PointMapper(object):
     def map(self, loc_i):
         pixelPoint = np.array([loc_i[0], loc_i[1], 1])
         physicalPoint = self.Q @ pixelPoint
-        physicalPoint = physicalPoint[:2] / physicalPoint[2]
-        x, z = 480 - physicalPoint[0], 635 - physicalPoint[1]
+        x, z = physicalPoint[:2] / physicalPoint[2]
         return (x , z)
 
     def height(self, foot_loc, head_point):
         P3 = np.array([[head_point[0], head_point[1], 1]]).T
-        L = np.array([480 - foot_loc[0], 635 - foot_loc[1], 1])
+        L = np.array([foot_loc[0], foot_loc[1], 1])
         b = -1 * self.P1 @ L
         A = np.concatenate((self.P2, P3), axis=1)
         x = np.linalg.inv(A.T @ A) @ (A.T @ b)

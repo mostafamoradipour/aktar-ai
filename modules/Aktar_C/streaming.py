@@ -70,7 +70,7 @@ class StreamerV1(object):
         counter = 0
         while not self.exit_event.is_set():
             ret, frame = self.stream.read()
-            # sleep(0.083333333+0.5)
+            # sleep(0.083333333*1.5)
             counter += 1
             with self.cond:
                 if not ret:

@@ -79,11 +79,12 @@ dt:
 
     mapping:
       calibration_file: modules/Aktar_AI/DTwin/assets/calibration.yaml
-      image_points: modules/Aktar_AI/DTwin/assets/imagePoints.npy
+      image_points: modules/Aktar_AI/DTwin/assets/2_img_pnts.npy
+      physical_points: modules/Aktar_AI/DTwin/assets/2_phys_pnts.npy
 
     joint_detection:
       device: gpu
-      weights: modules/Aktar_AI/Joint/models/human-pose-estimation-3d.pth
+      weights: modules/Aktar_AI/Pose/models/human-pose-estimation-3d.pth
 
   cam_url: rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800
 

@@ -8,24 +8,22 @@ class LiveDT():
     def __init__(self, cfg):
         self.engine = DTEngine(cfg["engine"])
         self.vid = StreamerV1(cfg["cam_url"])
-        # self.vid = StreamerV1("people2_2.avi")
         self.vid.thread.start()
+        # self.vid = StreamerV1("assets/people2_2.avi")
         self.database = DTdatabase(cfg['mongodb'])
 
     def generator(self):
-        # self.vid.thread.start()
         while True:
             ret, frame = self.vid.read_last()
-            # sleep(0.5)
             if ret:
                 result = self.engine.step(frame)
-                # if len(result):
-                #     dt_doc = {
-                #         'id': 1, 'height': result[0]['height'], 'location': result[0]['location'], 'warning': result[0]['warning']}
-                #     self.database.update_dt(dt_doc)
+                if len(result):
+                    dt_doc = {
+                        'id': 1, 'height': result[0]['height'], 'location': result[0]['location'], 'warning': result[0]['warning']}
+                    self.database.update_dt(dt_doc)
             else:
                 break
                 # self.vid.release()
-                # self.vid = StreamerV1("people2_2.avi")
+                # self.vid = StreamerV1("assets/people2_2.avi")
                 # self.vid.thread.start()
             yield result
