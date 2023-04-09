@@ -25,7 +25,7 @@ class Track(object):
         self.age = 1
         self.min_age = 1
         self.missed_count = 0
-        self.max_missed_count = 3
+        self.max_missed_count = 5
         self.sln = 10 # standing location noise
         self.max_sln = 15
         self.min_sln = 3
@@ -34,6 +34,12 @@ class Track(object):
 
     def update(self, pose, ms_location, ms_height, posture):
         self.pose = pose
+
+        if posture:
+            self.isFallen = True if posture == "fall" else False
+        if self.isFallen:
+            return
+    
         self.location_filter.update(ms_location)
 
         if ms_height:
@@ -55,9 +61,6 @@ class Track(object):
         if self.age >= 5:
             self.confirmed = True
         self.missed_count = 0
-
-        if posture:
-            self.isFallen = True if posture == "fall" else False
 
     def missed(self):
         self.missed_count += 1

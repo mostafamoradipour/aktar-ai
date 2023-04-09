@@ -1,4 +1,5 @@
 from copy import deepcopy
+from time import time
 import numpy as np
 import json
 
@@ -15,7 +16,8 @@ class DTEngine():
         self.estimator = PoseEstimator(cfg['joint_detection'])
         self.mapper = PointMapper(cfg['mapping'])
         self.tracks = {}
-        self.deactive_tracks = {}
+        self.missed_tracks = {}
+        self.fallen_tracks = {}
         self.list_of_ids = list(range(1000, 0, -1))
 
     def step(self, frame):
@@ -56,12 +58,21 @@ class DTEngine():
             self.tracks[trk_id] = Track(trk_id, pose, ms_location, ms_height)
 
         for trk_id in u_trk_ids:
-            self.tracks[trk_id].missed()       
+            self.tracks[trk_id].missed()   
+
+        for trk_id, track in self.fallen_tracks.copy().items():
+            if time() - track.fall_time > 5:
+                self.missed_tracks[trk_id] = track
+                self.fallen_tracks.pop(trk_id)
 
         for trk_id, track in self.tracks.copy().items():
             if not track.active:
                 if track.confirmed:
-                    self.deactive_tracks[trk_id] = track
+                    if track.isFallen:
+                        track.fall_time = time()
+                        self.fallen_tracks[trk_id] = track
+                    else:
+                        self.missed_tracks[trk_id] = track
                 else:
                     self.list_of_ids.append(trk_id)
                 self.tracks.pop(trk_id)
@@ -74,14 +85,24 @@ class DTEngine():
             data = deepcopy(self.pose_data)[track.pose_id]
             data["id"] = track.id
             data["isWalking"] = track.isWalking
-            data["joints"] = [] if track.isWalking else self.extract_bones(track.pose)
+            data["joints"] = [] if track.isWalking and not track.isFallen else self.extract_bones(track.pose)
             data["isFallen"] = track.isFallen
             data["location"] = track.location
             data["direction"] = track.direction
             data["height"] = track.height
             data["warning"] = True if self.zone(track.location) == 1 else False
             result.append(data)
-        print(len(result))
+        for track in self.fallen_tracks.values():
+            data = deepcopy(self.pose_data)[track.pose_id]
+            data["id"] = track.id
+            data["isWalking"] = track.isWalking
+            data["joints"] = [] if track.isWalking and not track.isFallen else self.extract_bones(track.pose)
+            data["isFallen"] = track.isFallen
+            data["location"] = track.location
+            data["direction"] = track.direction
+            data["height"] = track.height
+            data["warning"] = True if self.zone(track.location) == 1 else False
+            result.append(data) 
         return result
 
     def process_pose(self, simplified_pose):
