@@ -50,6 +50,7 @@ class DTEngine():
             track = self.tracks[trk_id]
             if track.confirmed:
                 x, z = track.location_filter.x[:2] // 50
+                x, z = int(x), int(z)
                 self.congestion_map[x, z] += 1.0
                 if z > 0 or x > 0:
                     self.congestion_map[max(0, x-1), max(0, z-1)] += 0.75
@@ -88,13 +89,22 @@ class DTEngine():
                     self.list_of_ids.append(trk_id)
                 self.tracks.pop(trk_id)
 
-        # Congestion Alert
-        self.congestion_map[self.congestion_map <= 1] = 0.0
-        if self.congestion_map.sum() > 1:
-            print("Congestion !!!")
+        # find congestion locations
+        # self.congestion_map[self.congestion_map <= 1] = 0.0
+        cong_locs = np.where(self.congestion_map > 10.)
 
         # Prepare result for UI
-        result = []
+        result = {"congestions": [], "persons": []}
+
+        # add congestions
+        for idx in range(len(cong_locs[0])):
+            x = cong_locs[0][idx] * 0.5
+            z = cong_locs[1][idx] * 0.5
+            congestion = {"x": x, "z": z}
+            result["congestions"].append(congestion)
+        result["congestions"] = result["congestions"][-1:]
+
+        # add active persons
         for track in self.tracks.values():
             if not track.confirmed:
                 continue
@@ -107,7 +117,9 @@ class DTEngine():
             data["direction"] = track.direction
             data["height"] = track.height
             data["warning"] = True if self.zone(track.location) == 1 else False
-            result.append(data)
+            result["persons"].append(data)
+
+        # add fallen persons
         for track in self.fallen_tracks.values():
             data = deepcopy(self.pose_data)[track.pose_id]
             data["id"] = track.id
@@ -118,7 +130,8 @@ class DTEngine():
             data["direction"] = track.direction
             data["height"] = track.height
             data["warning"] = True if self.zone(track.location) == 1 else False
-            result.append(data) 
+            result["persons"].append(data)
+
         return result
 
     def process_pose(self, simplified_pose):

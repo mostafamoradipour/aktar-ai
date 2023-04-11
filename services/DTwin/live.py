@@ -17,9 +17,9 @@ class LiveDT():
             ret, frame = self.vid.read_last()
             if ret:
                 result = self.engine.step(frame)
-                if len(result):
+                if len(result["persons"]):
                     dt_doc = {
-                        'id': 1, 'height': result[0]['height'], 'location': result[0]['location'], 'warning': result[0]['warning']}
+                        'id': 1, 'height': result["persons"][0]['height'], 'location': result["persons"][0]['location'], 'warning': result["persons"][0]['warning']}
                     self.database.update_dt(dt_doc)
             else:
                 break
