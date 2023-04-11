@@ -1,4 +1,6 @@
+from werkzeug.utils import secure_filename
 from flask import Flask, request, jsonify
+from flask import Flask, flash, request
 from datetime import datetime
 from flask_sock import Sock
 from flask_cors import CORS
@@ -7,6 +9,7 @@ import base64
 import yaml
 import json
 import cv2
+import os
 
 from services.Stream.streamer import streamEngine
 from services.DataBase.aktar_api import apiDB
@@ -14,12 +17,22 @@ from services.CDataM.manager import CDManager
 from services.DTwin.live import LiveDT
 
 
+ALLOWED_EXTENSIONS = {'glb'}
+UPLOAD_FOLDER = 'glbs/'
+
 app = Flask(__name__)
 sock = Sock(app)
 CORS(app)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# app.config['MAX_CONTENT_PATH']
 
 
-# Define necessary databases 
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+# Define necessary databases
 with open('config.yaml', 'r') as f:
     cfg = yaml.safe_load(f)
 
@@ -40,6 +53,31 @@ live_dt = LiveDT(cfg["dt"])
 cdm_engine = CDManager(cfg["cdm"])
 
 
+@app.route('/file', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            return 'No file part!'
+        file = request.files['file']
+        # If the user does not select a file, the browser submits an
+        # empty file without a filename.
+        if file.filename == '':
+            flash('No selected file')
+            return 'No selected file!'
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            return 'file uploaded successfully'
+
+    if request.method == 'GET':
+        names = os.listdir(app.config['UPLOAD_FOLDER'])
+        files = [app.config['UPLOAD_FOLDER'] + n for n in names]
+        print(files)
+        return {"files": files}
+
+
 @app.route("/frame", methods=["GET"])
 def get_frame():
     # req = request.get_json()
@@ -47,7 +85,7 @@ def get_frame():
     #     cam_url = req["url"]
     #     assert isinstance(cam_url, str)
     # except:
-    #     return {"message": "You send a bad request"}, response_code["bad_request"]  
+    #     return {"message": "You send a bad request"}, response_code["bad_request"]
     try:
         cam = cv2.VideoCapture(cfg["dt"]["cam_url"])
         ret, frame = cam.read()
@@ -97,7 +135,7 @@ def dt_live(ws):
         # try:
         ws.send(json.dumps({"data": data}))
         # except websockets.exceptions.ConnectionClosedError:
-            # return
+        # return
 
 
 @app.route("/get", methods=["GET"])
@@ -115,7 +153,8 @@ def customer_data_manager():
         persons = cdm_col.get_docs()
         public_persons = []
         for person in persons:
-            public_person = {"id": person["id"], "best_body": person[f'best_body_{person["body_counter"]}']}
+            public_person = {
+                "id": person["id"], "best_body": person[f'best_body_{person["body_counter"]}']}
             public_persons.append(public_person)
         return jsonify({"persons": public_persons}), response_code["ok"]
     except:
@@ -127,7 +166,7 @@ def cdm_status():
     try:
         return jsonify({"cdm_status": cdm_engine.running}), response_code["ok"]
     except:
-        return {"message": "Failed to load the customer info from database"}, response_code["bad_request"] 
+        return {"message": "Failed to load the customer info from database"}, response_code["bad_request"]
 
 
 @app.route("/profile", methods=["POST"])
@@ -143,11 +182,14 @@ def profile_manager():
             height = None
         for person in persons:
             if person["id"] == _id:
-                faces = [person[f"best_face_{count+1}"] for count in range(person["face_counter"])]
-                bodies = [person[f"best_body_{count+1}"] for count in range(person["body_counter"])]
+                faces = [person[f"best_face_{count+1}"]
+                         for count in range(person["face_counter"])]
+                bodies = [person[f"best_body_{count+1}"]
+                          for count in range(person["body_counter"])]
                 times = person["time"]
 
-                public_person = {"id": _id, "faces": faces, "bodies": bodies, "times": times, 'height': height}
+                public_person = {"id": _id, "faces": faces,
+                                 "bodies": bodies, "times": times, 'height': height}
                 break
         return jsonify({"persons": public_person}), response_code["ok"]
     except:
@@ -229,7 +271,8 @@ def play():
                 stream_engine.cam_urls.append(camera["url"])
         if len(stream_engine.cam_urls):
             stream_engine.start()
-        while not stream_engine.opened: pass
+        while not stream_engine.opened:
+            pass
         return {"message": "playing is done"}, response_code["ok"]
     except:
         return {"message": "palying failed"}, response_code["bad_request"]
@@ -239,6 +282,7 @@ def play():
 def stop():
     stream_engine.stop()
     return {"message": "playing is stoped"}, response_code["ok"]
+
 
 def create_app():
     return app
@@ -251,7 +295,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     # production server
     # serve(app, host="0.0.0.0", port=args.port)
-    # or in cmd: 
+    # or in cmd:
     #      waitress-serve --port=5000 --call api:create_app
     # development server
     app.run(host='0.0.0.0', port=args.port)
