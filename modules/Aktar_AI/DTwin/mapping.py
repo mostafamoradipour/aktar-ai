@@ -21,11 +21,11 @@ class PointMapper(object):
         self.P2 = P[:, 1:2]
         self.Q = np.linalg.inv(self.P1)
 
-    def map(self, loc_i):
-        pixelPoint = np.array([loc_i[0], loc_i[1], 1])
+    def map(self, point):
+        pixelPoint = np.array([point[0], point[1], 1])
         physicalPoint = self.Q @ pixelPoint
         x, z = physicalPoint[:2] / physicalPoint[2]
-        return (x , z)
+        return (x, z)
 
     def height(self, foot_loc, head_point):
         P3 = np.array([[head_point[0], head_point[1], 1]]).T

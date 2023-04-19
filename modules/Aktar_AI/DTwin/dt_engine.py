@@ -27,36 +27,79 @@ class DTEngine():
         est_ids = list(range(len(poses)))
         trk_ids = list(self.tracks.keys())
 
+        # to find the matched tracks and detections using keypoint distance
         if len(est_ids) and len(trk_ids):
             prev_poses = np.array([track.pose for track in self.tracks.values()])
             cost = euclidean_squared_distance2(prev_poses, poses)            
             matches, u_trk_ids, u_est_ids = linear_assignment(cost, trk_ids, est_ids)
         else:
             matches, u_trk_ids, u_est_ids = [], trk_ids, est_ids
+        
+        # define current frame congestion map
+        congestion_map = np.zeros((20, 20), dtype="float")
 
+        # tracks that are matched with a detection in current frame
         for trk_id, est_id in matches:
+
+            # pose extraction and analysis
             pose = poses[est_id]
             simplified_pose = self.simplify_pose(pose)
-            neck, _, ankle = simplified_pose
+            neck, hip, ankle = simplified_pose
             posture = self.process_pose(simplified_pose)
-            ms_location = self.mapper.map(ankle) if ankle else None
-            if not ms_location:
-                u_trk_ids.append(trk_id)
-                continue
-            ms_height = self.mapper.height(ms_location, neck) if ms_location and neck and posture == "stand" else None
-            self.tracks[trk_id].update(pose, ms_location, ms_height, posture)
 
-            # update congestion map
             track = self.tracks[trk_id]
-            if track.confirmed:
+            if posture == "fall":
+                track.isFallen = True
+                track.fall_time = time()
+                # fall measurements
+                fall_location = self.mapper.map(hip)
+                track.fall_status["location"] = {"x": fall_location[0] / 100, "z": fall_location[1] / 100}
+                if ankle:
+                    x, z = self.mapper.map(ankle)
+                    fall_direction = {"x": fall_location[0] - x, "z": fall_location[1] - z}
+                elif neck:
+                    x, z = self.mapper.map(neck)
+                    fall_direction = {"x": x - fall_location[0], "z": z - fall_location[1]}
+                track.fall_status["direction"] = fall_direction
+            else:
+                # standing measurements
+                # location measurement
+                ms_location = self.mapper.map(ankle) if ankle else None
+                if not ms_location:
+                    u_trk_ids.append(trk_id)
+                    continue
+
+                # height measurement
+                ms_height = self.mapper.height(ms_location, neck) if ms_location and neck and posture == "stand" else None
+                self.tracks[trk_id].update(pose, ms_location, ms_height)
+
+            # congestion map update
+            if track.confirmed and not track.isFallen:
                 x, z = track.location_filter.x[:2] // 50
                 x, z = int(x), int(z)
-                self.congestion_map[x, z] += 1.0
-                if z > 0 or x > 0:
-                    self.congestion_map[max(0, x-1), max(0, z-1)] += 0.75
-                if z < 19 or x < 19:
-                    self.congestion_map[min(x+1, 19), min(z+1, 19)] += 0.75
+                congestion_map[x, z] += 0.5
+                if z > 0 and x > 0:
+                    congestion_map[x - 1, z - 1 ] += 0.5
+                    congestion_map[x - 1, z] += 0.5
+                    congestion_map[x, z - 1] += 0.5
+                elif z <= 0:
+                    congestion_map[x - 1, z] += 0.5
+                elif x <= 0:
+                    congestion_map[x, z - 1] += 0.5
 
+                if z < 9 and x < 9:
+                    congestion_map[x + 1, z + 1 ] += 0.5
+                    congestion_map[x + 1, z] += 0.5
+                    congestion_map[x, z + 1] += 0.5
+                elif z >= 9:
+                    congestion_map[x + 1, z] += 0.5
+                elif x >= 9:
+                    congestion_map[x, z + 1] += 0.5
+
+        congestion_map[congestion_map < 1] = 0.0
+        self.congestion_map = congestion_map  + self.congestion_map -5 * np.array(congestion_map == 0) * np.array(self.congestion_map >= 5)
+
+        # detections that are not matched with any track
         for est_id in u_est_ids:
             pose = poses[est_id]
             simplified_pose = self.simplify_pose(pose)
@@ -69,11 +112,12 @@ class DTEngine():
             trk_id = self.list_of_ids.pop()
             self.tracks[trk_id] = Track(trk_id, pose, ms_location, ms_height)
 
+        # tracks that are not matched with any detection
         for trk_id in u_trk_ids:
             self.tracks[trk_id].missed()   
 
         for trk_id, track in self.fallen_tracks.copy().items():
-            if time() - track.fall_time > 5:
+            if time() - track.fall_time > 10:
                 self.missed_tracks[trk_id] = track
                 self.fallen_tracks.pop(trk_id)
 
@@ -81,7 +125,6 @@ class DTEngine():
             if not track.active:
                 if track.confirmed:
                     if track.isFallen:
-                        track.fall_time = time()
                         self.fallen_tracks[trk_id] = track
                     else:
                         self.missed_tracks[trk_id] = track
@@ -91,18 +134,19 @@ class DTEngine():
 
         # find congestion locations
         # self.congestion_map[self.congestion_map <= 1] = 0.0
-        cong_locs = np.where(self.congestion_map > 10.)
+        cong_locs = np.where(self.congestion_map > 25)
 
         # Prepare result for UI
-        result = {"congestions": [], "persons": []}
+        # result = {"persons": [], "fallens": [], "congestions": []}
+        result = {"persons": [], "congestions": []}
 
         # add congestions
         for idx in range(len(cong_locs[0])):
-            x = cong_locs[0][idx] * 0.5
-            z = cong_locs[1][idx] * 0.5
+            x = float(cong_locs[0][idx]) * 0.5 + 0.25
+            z = float(cong_locs[1][idx]) * 0.5 + 0.25
             congestion = {"x": x, "z": z}
             result["congestions"].append(congestion)
-        result["congestions"] = result["congestions"][-1:]
+        # result["congestions"] = result["congestions"][-1:]
 
         # add active persons
         for track in self.tracks.values():
@@ -110,9 +154,9 @@ class DTEngine():
                 continue
             data = deepcopy(self.pose_data)[track.pose_id]
             data["id"] = track.id
+            data["isFallen"] = track.isFallen
             data["isWalking"] = track.isWalking
             data["joints"] = [] if track.isWalking and not track.isFallen else self.extract_bones(track.pose)
-            data["isFallen"] = track.isFallen
             data["location"] = track.location
             data["direction"] = track.direction
             data["height"] = track.height
@@ -123,9 +167,9 @@ class DTEngine():
         for track in self.fallen_tracks.values():
             data = deepcopy(self.pose_data)[track.pose_id]
             data["id"] = track.id
+            data["isFallen"] = track.isFallen
             data["isWalking"] = track.isWalking
             data["joints"] = [] if track.isWalking and not track.isFallen else self.extract_bones(track.pose)
-            data["isFallen"] = track.isFallen
             data["location"] = track.location
             data["direction"] = track.direction
             data["height"] = track.height

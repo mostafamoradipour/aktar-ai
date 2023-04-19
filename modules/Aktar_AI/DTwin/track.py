@@ -31,14 +31,10 @@ class Track(object):
         self.min_sln = 3
         self.confirmed = False
         self.isFallen = False
+        self.fall_status = {"location": None, "direction": None, "time": None}
 
-    def update(self, pose, ms_location, ms_height, posture):
+    def update(self, pose, ms_location, ms_height):
         self.pose = pose
-
-        if posture:
-            self.isFallen = True if posture == "fall" else False
-        if self.isFallen:
-            return
     
         self.location_filter.update(ms_location)
 

@@ -1,11 +1,12 @@
+from flask import Flask, flash, request, send_from_directory
 from werkzeug.utils import secure_filename
 from flask import Flask, request, jsonify
-from flask import Flask, flash, request
 from datetime import datetime
 from flask_sock import Sock
 from flask_cors import CORS
 import argparse
 import base64
+import shutil 
 import yaml
 import json
 import cv2
@@ -40,6 +41,7 @@ response_code = cfg["response_code"]
 cam_col = apiDB(cfg["stream"]["mongodb"])
 cdm_col = apiDB(cfg["cdm"]["mongodb"])
 dt_col = apiDB(cfg["dt"]['mongodb'])
+planes = []
 
 # Reset the databases
 cdm_col.reset()
@@ -49,13 +51,53 @@ print("CDM and DT of Aktar reseted!")
 # Initialize AI engines
 stream_engine = streamEngine()
 live_dt = LiveDT(cfg["dt"])
-# live_dt = LiveDT(cfg["dt"], "outpy.avi")
 cdm_engine = CDManager(cfg["cdm"])
 
 
-@app.route('/file', methods=['GET', 'POST'])
+@app.route("/dt", methods=["GET"])
+def get_dt_data():
+    global planes
+    files = []
+    try:
+        names = os.listdir(app.config['UPLOAD_FOLDER'])
+        files = [ '/downloadfile/' + n for n in names]
+    except OSError as e:
+        print("Error: %s - %s." % (e.filename, e.strerror))
+        print("-----------------------------------------------------")
+    result = {'modelList': files, 'planeList': planes, 'warningZone': cfg["dt"]["warning_zone"]}
+    return jsonify(result), response_code["ok"]
+
+
+@app.route('/downloadfile/<name>', methods=['GET'])
+def download_file(name):
+    if request.method == 'GET':
+        return send_from_directory(app.config["UPLOAD_FOLDER"], name, as_attachment=True)
+
+
+@app.route('/dt/reset', methods=['GET'])
+def delete_file():
+    global planes
+    if request.method == 'GET': 
+        planes = []
+        # checking for folder availaibility using try and except block
+        try:
+            shutil.rmtree(app.config['UPLOAD_FOLDER'])
+            print("We can see a folder deleted succesfully")
+            print("-----------------------------------------------------")
+            message = 'the directory deleted successfully.'
+        except OSError as e:
+            print("Error: %s - %s." % (e.filename, e.strerror))
+            print("-----------------------------------------------------")
+            message = 'the directory does not exist.'
+        return {'message': message}, response_code['ok']
+
+
+@app.route('/dt/add-file', methods=['POST'])
 def upload_file():
     if request.method == 'POST':
+        if not os.path.exists(app.config['UPLOAD_FOLDER']): # checking for folder existance
+            # creating a new folder
+            os.makedirs(app.config['UPLOAD_FOLDER']) 
         # check if the post request has the file part
         if 'file' not in request.files:
             flash('No file part')
@@ -71,11 +113,15 @@ def upload_file():
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             return 'file uploaded successfully'
 
-    if request.method == 'GET':
-        names = os.listdir(app.config['UPLOAD_FOLDER'])
-        files = [app.config['UPLOAD_FOLDER'] + n for n in names]
-        print(files)
-        return {"files": files}
+
+@app.route('/dt/set-plane', methods=['POST'])
+def set_plane():
+    global planes
+    if request.method == 'POST':
+        req = request.get_json()
+        planes = req["planeList"]
+        planes.extend(planes)
+        return 'successful plane set'
 
 
 @app.route("/frame", methods=["GET"])
@@ -97,11 +143,6 @@ def get_frame():
 
     except:
         return {"message": "failed to read the url"}, response_code["bad_request"]
-
-
-@app.route("/dt", methods=["GET"])
-def get_warning_zone():
-    return jsonify(cfg["dt"]["warning_zone"]), response_code["ok"]
 
 
 @sock.route('/cdm')
