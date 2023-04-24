@@ -24,12 +24,15 @@ class InferenceEnginePyTorch:
         net.eval()
         self.net = net
 
-    def infer(self, img):
-        normalized_img = InferenceEnginePyTorch._normalize(img, self.img_mean, self.img_scale)
-        data = torch.from_numpy(normalized_img).permute(2, 0, 1).unsqueeze(0).to(self.device)
+    def infer(self, imgs):
+        data = []
+        for img in imgs:
+            normalized_img = InferenceEnginePyTorch._normalize(img, self.img_mean, self.img_scale)
+            data.append(torch.from_numpy(normalized_img).permute(2, 0, 1))
+        data = torch.stack(data).to(self.device)
         # print(type(data), data.shape)
         # print(data)
-        features, heatmaps, pafs = self.net(data)
+        heatmaps, pafs = self.net(data)
         # print(features[-1].squeeze().data.cpu().numpy().shape)
         # print(heatmaps[-1].squeeze().data.cpu().numpy().shape)
         # print(pafs[-1].squeeze().data.cpu().numpy().shape)
@@ -37,8 +40,7 @@ class InferenceEnginePyTorch:
         # print(features)
         # print(features[-1].shape)
         # print(features[-1].squeeze().shape)
-        return (features[-1].squeeze().data.cpu().numpy(),
-                heatmaps[-1].squeeze().data.cpu().numpy(), pafs[-1].squeeze().data.cpu().numpy())
+        return (heatmaps.data.cpu().numpy(), pafs.data.cpu().numpy())
 
     @staticmethod
     def _normalize(img, img_mean, img_scale):

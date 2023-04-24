@@ -130,3 +130,19 @@ def _get_assignment_matches(cost, row_ids, col_ids, m_rows, m_cols):
             unmatched_row_ids.append(row_ids[row])
             unmatched_col_ids.append(col_ids[col])
     return matches, unmatched_row_ids, unmatched_col_ids
+
+
+def remove_too_close_poses(poses):
+    scost = euclidean_squared_distance2(poses, poses)
+    indexes = np.where(scost > 0 and scost < INF_COST)[0]
+    return poses[indexes]
+
+
+def match_by_location(locs, loc):
+    if len(locs):
+        locs = np.array(locs).reshape(-1, 2)
+        loc = np.array(loc).reshape(-1, 2)
+        dists =  np.linalg.norm(locs - loc, axis=1)
+        if dists.min() < 50:
+            return dists.argmin()
+    return -1

@@ -90,5 +90,5 @@ class DynamicKF(object):
     def update(self, ms_location):
         if ms_location:
             z = np.array(ms_location).reshape((2, 1))
-            self._predict()
+            # self._predict()
             self._update(z)

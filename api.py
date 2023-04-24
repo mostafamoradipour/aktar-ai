@@ -101,7 +101,7 @@ def get_frame():
 
 @app.route("/dt", methods=["GET"])
 def get_warning_zone():
-    return jsonify(cfg["dt"]["warning_zone"]), response_code["ok"]
+    return jsonify(cfg["dt"]["engine"]["warning_zone"]), response_code["ok"]
 
 
 @sock.route('/cdm')

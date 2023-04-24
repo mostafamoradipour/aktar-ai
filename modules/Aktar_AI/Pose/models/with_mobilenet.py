@@ -179,17 +179,18 @@ class PoseEstimationWithMobileNet(nn.Module):
     def forward(self, x):
         model_features = self.model(x)
         backbone_features = self.cpm(model_features)
-
         stages_output = self.initial_stage(backbone_features)
+
         for refinement_stage in self.refinement_stages:
             stages_output.extend(
                 refinement_stage(torch.cat([backbone_features, stages_output[-2], stages_output[-1]], dim=1)))
         keypoints2d_maps = stages_output[-2]
         paf_maps = stages_output[-1]
+
         if self.is_convertible_by_mo:  # Model Optimizer R3 2019 cuts out these two network outputs, add fake op to fix it
             keypoints2d_maps = stages_output[-2] + self.fake_conv_heatmaps(stages_output[-2])
             paf_maps = stages_output[-1] + self.fake_conv_pafs(stages_output[-1])
-        out = self.Pose3D(backbone_features, torch.cat([stages_output[-2], stages_output[-1]], dim=1))
 
-        return out, keypoints2d_maps, paf_maps
+        # out = self.Pose3D(backbone_features, torch.cat([stages_output[-2], stages_output[-1]], dim=1))
 
+        return keypoints2d_maps, paf_maps
