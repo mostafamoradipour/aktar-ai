@@ -74,21 +74,28 @@ cdm:
     queue_maxsize: 10
 
 dt:
+  pose_estimation:
+    device: gpu
+    weights: modules/Aktar_AI/Pose/models/human-pose-estimation-3d.pth
+
   engine:
     pose_data: modules/Aktar_AI/DTwin/assets/pose_data.json
 
     mapping:
-      calibration_file: modules/Aktar_AI/DTwin/assets/calibration.yaml
-      image_points: modules/Aktar_AI/DTwin/assets/2_img_pnts.npy
-      physical_points: modules/Aktar_AI/DTwin/assets/2_phys_pnts.npy
+      0:
+        calibration_file: modules/Aktar_AI/DTwin/assets/calibration.yaml
+        image_points: modules/Aktar_AI/DTwin/assets/1_img_pnts.npy
+        physical_points: modules/Aktar_AI/DTwin/assets/1_phys_pnts.npy
+      1:
+        calibration_file: modules/Aktar_AI/DTwin/assets/calibration.yaml
+        image_points: modules/Aktar_AI/DTwin/assets/2_img_pnts.npy
+        physical_points: modules/Aktar_AI/DTwin/assets/2_phys_pnts.npy
+    
+    warning_zone: {"x1": 2.5, "z1": 4.5, "x2": 4.8, "z2": 6.35}
 
-    joint_detection:
-      device: gpu
-      weights: modules/Aktar_AI/Pose/models/human-pose-estimation-3d.pth
-
-  cam_url: rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800
-
-  warning_zone: {"x1": 2.5, "z1": 4.5, "x2": 4.8, "z2": 6.35}
+  stream:
+    0: rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=0.sdp?real_stream--rtp-caching=800
+    1: rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800
 
   mongodb:
     host: 0.0.0.0

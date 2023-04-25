@@ -1,3 +1,4 @@
+from time import time
 import numpy as np
 
 from modules.Aktar_AI.DTwin.kf import StaticKF, DynamicKF
@@ -5,13 +6,14 @@ from modules.Aktar_AI.DTwin.kf import StaticKF, DynamicKF
 
 class Track(object):
     def __init__(self,
-                 _id,
+                 trk_id,
+                 cam_id,
                  pose,
                  ms_location,
-                 ms_height
+                 ms_height,
                  ):
-        self.id = _id
-        self.pose = pose
+        self.id = trk_id
+        self.poses = {cam_id: pose}
         self.location_filter = DynamicKF(init_location=ms_location)
         self.height_filter = StaticKF(init_height=ms_height)
 
@@ -21,6 +23,7 @@ class Track(object):
         self.direction = {"x": dx, "z": dz} # currnet direction of track
         self.height = self.height_filter.x # current height of track
 
+        self.update_time = time()
         self.pose_id = 8
         self.age = 1
         self.min_age = 1
@@ -33,8 +36,8 @@ class Track(object):
         self.isFallen = False
         self.fall_status = {"location": None, "direction": None, "time": None}
 
-    def update(self, pose, ms_location, ms_height):
-        self.pose = pose
+    def update(self, cam_id, pose, ms_location, ms_height):
+        self.poses[cam_id] = pose
     
         self.location_filter.update(ms_location)
 
@@ -48,7 +51,10 @@ class Track(object):
             self.location = {"x": x, "z": z}
             dx, dz = np.array(self.location_filter.x[2:], dtype='float64').reshape(-1)
             self.direction = {"x": dx, "z": dz}
-            self.pose_id = (self.pose_id + 1) % 8
+            duration = time() - self.update_time
+            if duration > 0.2:
+                self.update_time = time()
+                self.pose_id = (self.pose_id + 1) % 8
         else:
             self.pose_id = 8
             self.sln = min(self.max_sln, self.sln + 2)
@@ -58,6 +64,13 @@ class Track(object):
             self.confirmed = True
         self.missed_count = 0
 
+    def fall(self, cam_id, pose, fall_location, fall_direction):
+        self.fall_status["time"] = time()
+        self.poses[cam_id] = pose
+        self.isFallen = True
+        self.fall_status["location"] = fall_location
+        self.fall_status["fall_direction"] = fall_direction
+
     def missed(self):
         self.missed_count += 1
         if self.missed_count >= self.max_missed_count:
@@ -66,7 +79,7 @@ class Track(object):
 
     @property
     def isWalking(self):
-        return True if np.linalg.norm(self.location_filter.x[2:]) > self.sln else False
+        return True if np.linalg.norm(self.location_filter.x[2:]) > self.sln and not self.isFallen else False
 
     @property
     def active(self):

@@ -21,7 +21,7 @@ limbs = [[18, 17, 1],
 
 
 def get_root_relative_poses(inference_results):
-    features, heatmap, paf_map = inference_results
+    heatmap, paf_map = inference_results
 
     upsample_ratio = 4
     found_poses = extract_poses(heatmap[0:-1], paf_map, upsample_ratio)[0]
@@ -46,32 +46,7 @@ def get_root_relative_poses(inference_results):
         pose_2d[-1] = found_poses[pose_id, -1]
         poses_2d.append(pose_2d)
 
-    keypoint_treshold = 0.1
-    poses_3d = np.ones((len(poses_2d), num_kpt_panoptic * 4), dtype=np.float32) * -1
-    for pose_id in range(len(poses_3d)):
-        if poses_2d[pose_id][2] > keypoint_treshold:
-            neck_2d = poses_2d[pose_id][:2].astype(int)
-            # read all pose coordinates at neck location
-            for kpt_id in range(num_kpt_panoptic):
-                map_3d = features[kpt_id * 3:(kpt_id + 1) * 3]
-                poses_3d[pose_id][kpt_id * 4] = map_3d[0, neck_2d[1], neck_2d[0]] * AVG_PERSON_HEIGHT
-                poses_3d[pose_id][kpt_id * 4 + 1] = map_3d[1, neck_2d[1], neck_2d[0]] * AVG_PERSON_HEIGHT
-                poses_3d[pose_id][kpt_id * 4 + 2] = map_3d[2, neck_2d[1], neck_2d[0]] * AVG_PERSON_HEIGHT
-                poses_3d[pose_id][kpt_id * 4 + 3] = poses_2d[pose_id][kpt_id * 3 + 2]
-
-            # refine keypoints coordinates at corresponding limbs locations
-            for limb in limbs:
-                for kpt_id_from in limb:
-                    if poses_2d[pose_id][kpt_id_from * 3 + 2] > keypoint_treshold:
-                        for kpt_id_where in limb:
-                            kpt_from_2d = poses_2d[pose_id][kpt_id_from*3: kpt_id_from*3 + 2].astype(int)
-                            map_3d = features[kpt_id_where * 3:(kpt_id_where + 1) * 3]
-                            poses_3d[pose_id][kpt_id_where * 4] = map_3d[0, kpt_from_2d[1], kpt_from_2d[0]] * AVG_PERSON_HEIGHT
-                            poses_3d[pose_id][kpt_id_where * 4 + 1] = map_3d[1, kpt_from_2d[1], kpt_from_2d[0]] * AVG_PERSON_HEIGHT
-                            poses_3d[pose_id][kpt_id_where * 4 + 2] = map_3d[2, kpt_from_2d[1], kpt_from_2d[0]] * AVG_PERSON_HEIGHT
-                        break
-
-    return poses_3d, np.array(poses_2d), features.shape
+    return np.array(poses_2d)
 
 
 previous_poses_2d = []
@@ -147,8 +122,7 @@ def parse_poses(inference_results, input_scale, stride, fx):
 
 
 def parse_poses_2d(inference_results, input_scale, stride, conf_thresh=5):
-    global previous_poses_2d
-    _, poses_2d, _ = get_root_relative_poses(inference_results)
+    poses_2d = get_root_relative_poses(inference_results)
     poses = []
     for pose_2d in poses_2d:
         if pose_2d[-1] < conf_thresh:
