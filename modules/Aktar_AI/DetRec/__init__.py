@@ -1,6 +1,3 @@
 import sys
 
-
-sys.path.append('verification')
-
-from .person_verification import PersonVerifier
+from .cdm_engine import CDMEngine

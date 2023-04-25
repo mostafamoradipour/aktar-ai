@@ -1,11 +1,12 @@
-from modules.Aktar_AI.DetRec import PersonVerifier
 from modules.Aktar_C.streaming import StreamerV1
+from modules.Aktar_AI.DetRec import CDMEngine
 from threading import Thread
 
 
 class CDManager():
     def __init__(self, cfg):
-        self.verifier = PersonVerifier(cfg)
+        super(CDManager, self).__init__()
+        self.engine = CDMEngine(cfg)
         self.cam_urls = None
         self.running = False
 
@@ -20,7 +21,7 @@ class CDManager():
             for vid in vids:
                 ret, frame = vid.read_last()
                 if ret:
-                    self.verifier.verify(frame)
+                    self.engine.step(frame)
         for vid in vids:
             vid.release()
 

@@ -19,17 +19,3 @@ class DTdatabase():
             self.collection.update_one({'id': dt_doc['id']}, update)
         else:
             self.collection.insert_one({'id': dt_doc['id'], 'height': dt_doc['height'], 'location_history': [dt_doc['location']]})
-
-    def add_plane(self, plane):
-        cur = self.collection.find({'id': 'plane'})
-        if len(list(cur)):
-            self.collection.update_one({'id': 'plane'}, {'$push': {'data': plane}})
-        else:
-            self.collection.insert_one({'id': 'plane', 'data': plane})
-
-    def remove_planes(self):
-        self.collection.delete_many({"id": "plane"})
-
-    def get_planes(self):
-        cur = self.collection.find({'id': 'plane'})
-        return cur['data']
