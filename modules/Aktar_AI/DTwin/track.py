@@ -1,6 +1,7 @@
 from time import time
 import numpy as np
 
+from modules.Aktar_AI.DTwin.utils import get_box_from_pose
 from modules.Aktar_AI.DTwin.kf import StaticKF, DynamicKF
 
 
@@ -14,6 +15,7 @@ class Track(object):
                  ):
         self.id = trk_id
         self.poses = {cam_id: pose}
+        self.boxes = {cam_id: get_box_from_pose(pose)}
         self.location_filter = DynamicKF(init_location=ms_location)
         self.height_filter = StaticKF(init_height=ms_height)
 
@@ -38,7 +40,8 @@ class Track(object):
 
     def update(self, cam_id, pose, ms_location, ms_height):
         self.poses[cam_id] = pose
-    
+        self.boxes = {cam_id: get_box_from_pose(pose)}
+
         self.location_filter.update(ms_location)
 
         if ms_height:

@@ -80,8 +80,7 @@ class DynamicKF(object):
         # Calculate the Kalman Gain
         # K = P * H'* inv(H*P*H'+R)
         K = np.dot(np.dot(self.P, self.H.T), np.linalg.inv(S))  # Eq.(11)
-        self.x = np.round(
-            self.x + np.dot(K, (z - np.dot(self.H, self.x))))  # Eq.(12)
+        self.x = np.round(self.x + np.dot(K, (z - np.dot(self.H, self.x))))  # Eq.(12)
         I = np.eye(self.H.shape[1])
         # Update error covariance matrix
         self.P = (I - (K * self.H)) * self.P  # Eq.(13)

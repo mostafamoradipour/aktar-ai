@@ -51,6 +51,7 @@ print("CDM and DT of Aktar reseted!")
 # Initialize AI engines
 stream_engine = streamEngine()
 live_dt = LiveDT(cfg["dt"])
+# live_dt.save_poses()
 cdm_engine = CDManager(cfg["cdm"])
 
 
@@ -64,7 +65,7 @@ def get_dt_data():
     except OSError as e:
         print("Error: %s - %s." % (e.filename, e.strerror))
         print("-----------------------------------------------------")
-    result = {'modelList': files, 'planeList': planes, 'warningZone': cfg["dt"]["warning_zone"]}
+    result = {'modelList': files, 'planeList': planes, 'warningZone': cfg["dt"]["engine"]["warning_zone"]}
     return jsonify(result), response_code["ok"]
 
 
@@ -133,7 +134,7 @@ def get_frame():
     # except:
     #     return {"message": "You send a bad request"}, response_code["bad_request"]
     try:
-        cam = cv2.VideoCapture(cfg["dt"]["cam_url"])
+        cam = cv2.VideoCapture(cfg["dt"]["stream"][0])
         ret, frame = cam.read()
         assert ret, "failed to read the url"
         _, im_arr = cv2.imencode('.jpg', frame)
@@ -219,6 +220,7 @@ def profile_manager():
         dt_doc = dt_col.get_docs()
         if dt_doc:
             height = int(dt_col.get_docs()[0]['height'])
+            trajectory = dt_col.get_docs()[0]['location_history']
         else:
             height = None
         for person in persons:
@@ -229,8 +231,14 @@ def profile_manager():
                           for count in range(person["body_counter"])]
                 times = person["time"]
 
+                trajectory = [{"location": {"x": 10, "z": 10}}, {"location": {"x": 1, "z": 1}}, {"location": {"x": 2, "z": 2}},
+                              {"location": {"x": 3, "z": 3}}, {"location": {"x": 4, "z": 4}}, {"location": {"x": 3, "z": 5}},
+                              {"location": {"x": 2, "z": 6}}, {"location": {"x": 1, "z": 5}}, {"location": {"x": 1, "z": 4}},
+                              {"location": {"x": 2, "z": 3}}, {"location": {"x": 2, "z": 2}}, {"location": {"x": 2, "z": 1}}]
+
                 public_person = {"id": _id, "faces": faces,
-                                 "bodies": bodies, "times": times, 'height': height}
+                                 "bodies": bodies, "times": times, "height": height,
+                                 "trajectory": trajectory}
                 break
         return jsonify({"persons": public_person}), response_code["ok"]
     except:

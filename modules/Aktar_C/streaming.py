@@ -69,8 +69,8 @@ class StreamerV1(object):
     def read_input_uri(self):
         counter = 0
         while not self.exit_event.is_set():
+            # sleep(0.4)
             ret, frame = self.stream.read()
-            # sleep(0.083333333*1.5)
             counter += 1
             with self.cond:
                 if not ret:

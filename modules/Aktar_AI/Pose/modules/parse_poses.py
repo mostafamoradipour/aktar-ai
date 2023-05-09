@@ -125,8 +125,8 @@ def parse_poses_2d(inference_results, input_scale, stride, conf_thresh=5):
     poses_2d = get_root_relative_poses(inference_results)
     poses = []
     for pose_2d in poses_2d:
-        if pose_2d[-1] < conf_thresh:
-            continue
+        # if pose_2d[-1] < conf_thresh:
+        #     continue
         num_kpt = (pose_2d.shape[0] - 1) // 3
         pose_2d_scaled = np.ones(pose_2d.shape[0], dtype=np.float32) * -1  # +1 for pose confidence
         for kpt_id in range(num_kpt):
@@ -135,6 +135,6 @@ def parse_poses_2d(inference_results, input_scale, stride, conf_thresh=5):
                 pose_2d_scaled[kpt_id * 3 + 1] = int(pose_2d[kpt_id * 3 + 1] * stride / input_scale)
                 pose_2d_scaled[kpt_id * 3 + 2] = pose_2d[kpt_id * 3 + 2]
         pose_2d_scaled[-1] = pose_2d[-1]
-        pose = pose_2d_scaled[:-1].reshape(19, 3)[:, :2]
-        poses.append(pose)
+        # pose = pose_2d_scaled[:-1].reshape(19, 3)[:, :2]
+        poses.append(pose_2d_scaled)
     return  np.array(poses)

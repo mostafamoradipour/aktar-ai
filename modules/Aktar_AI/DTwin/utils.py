@@ -6,6 +6,14 @@ import numpy as np
 INF_COST = 38
 
 
+def get_box_from_pose(pose):
+    x1 = max(0, int(pose[:, 0].min()))
+    y1 = max(0, int(pose[:, 1].min()))
+    x2 = max(0, int(pose[:, 0].max()))
+    y2 = max(0, int(pose[:, 1].max()))
+    return x1, y1, x2, y2
+
+
 def find_distance_angle_box(tlbr):
     camera_alpha = 80 * np.pi / 180
     camera_beta = 45 * np.pi / 180

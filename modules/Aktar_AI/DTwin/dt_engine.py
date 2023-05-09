@@ -2,7 +2,7 @@ from copy import deepcopy
 import numpy as np
 import json
 
-from modules.Aktar_AI.DTwin.utils.utils import euclidean_squared_distance2, linear_assignment, match_by_location
+from modules.Aktar_AI.DTwin.utils import euclidean_squared_distance2, linear_assignment, match_by_location
 from modules.Aktar_AI.DTwin.mapping import PointMapper
 from modules.Aktar_AI.DTwin.track import Track
 
@@ -16,21 +16,25 @@ class DTEngine():
         self.missed_tracks = {}
         self.fallen_tracks = {}
         self.list_of_ids = list(range(1000, 0, -1))
-        self.congestion_map = np.zeros((20, 20), dtype="float") # for a 10 by 10 square meter place, resolution: 1 meter, stride = 0.5 meter
+        self.warning_zone = cfg['warning_zone']
+        self.congestion_map = np.zeros((40, 40), dtype="float") # for a 10 by 10 square meter place, resolution: 1 meter, stride = 0.5 meter
 
     def step(self, all_cams_poses):
 
         num_cams = len(all_cams_poses)
         all_tracks = {track.id: np.array(track.location_filter.x[:2]).reshape(2) for track in self.tracks.values()}
         all_m_trk_ids = set()
-        
+
         # define current frame congestion map
-        congestion_map = np.zeros((20, 20), dtype="float")
+        congestion_map = np.zeros((40, 40), dtype="float")
 
         for cam_id in range(num_cams):
 
             tracks = {track.id: track.poses[cam_id] for track in self.tracks.values() if cam_id in track.poses.keys()}
             poses = all_cams_poses[cam_id]
+
+            # filter by confidence
+            poses = np.array([pose[:-1].reshape(-1, 3)[:, :2] for pose in poses if pose[-1] > 15])
             # poses = remove_too_close_poses(poses)
 
             est_ids = list(range(len(poses)))
@@ -84,14 +88,14 @@ class DTEngine():
 
                 if posture == "fall":
                     # fall measurements
-                    fall_location = self.mapper.map(cam_id, hip)
-                    fall_location = {"x": fall_location[0] / 100, "z": fall_location[1] / 100}
+                    fl = self.mapper.map(cam_id, hip)
+                    fall_location = {"x": fl[0] / 100, "z": fl[1] / 100}
                     if ankle:
                         x, z = self.mapper.map(cam_id, ankle)
-                        fall_direction = {"x": fall_location[0] - x, "z": fall_location[1] - z}
+                        fall_direction = {"x": fl[0] - x, "z": fl[1] - z}
                     elif neck:
                         x, z = self.mapper.map(cam_id, neck)
-                        fall_direction = {"x": x - fall_location[0], "z": z - fall_location[1]}
+                        fall_direction = {"x": x - fl[0], "z": z - fl[1]}
                     track.fall(cam_id, pose, fall_location, fall_direction)
                     
                 else:
@@ -110,16 +114,12 @@ class DTEngine():
                 # update set of matched track ids
                 all_m_trk_ids.add(trk_id)
 
-        # for trk_id, track in self.fallen_tracks.copy().items():
-        #     if time() - track.fall_time > 10:
-        #         self.missed_tracks[trk_id] = track
-        #         self.fallen_tracks.pop(trk_id)
-
-        for trk_id, track in self.tracks.copy().items():
+        for trk_id in list(self.tracks.keys()):
             # tracks that are not matched with any detection
+            track = self.tracks[trk_id]
             if track.id not in all_m_trk_ids:
-                self.tracks[trk_id].missed()
-            
+                track.missed()
+
             if not track.active:
                 if track.confirmed:
                     self.missed_tracks[trk_id] = track
@@ -137,29 +137,29 @@ class DTEngine():
             else:
                 # kalman predict
                 track.location_filter._predict()
-                
-                # congestion map update
-                if track.confirmed:
-                    x, z = track.location_filter.x[:2] // 50
-                    x, z = int(x), int(z)
-                    congestion_map[x, z] += 0.5
-                    if z > 0 and x > 0:
-                        congestion_map[x - 1, z - 1 ] += 0.5
-                        congestion_map[x - 1, z] += 0.5
-                        congestion_map[x, z - 1] += 0.5
-                    elif z <= 0:
-                        congestion_map[x - 1, z] += 0.5
-                    elif x <= 0:
-                        congestion_map[x, z - 1] += 0.5
 
-                    if z < 9 and x < 9:
-                        congestion_map[x + 1, z + 1 ] += 0.5
-                        congestion_map[x + 1, z] += 0.5
-                        congestion_map[x, z + 1] += 0.5
-                    elif z >= 9:
-                        congestion_map[x + 1, z] += 0.5
-                    elif x >= 9:
-                        congestion_map[x, z + 1] += 0.5
+            # congestion map update
+            if track.confirmed:
+                x, z = track.location_filter.x[:2] // 50
+                x, z = int(x), int(z)
+                congestion_map[x, z] += 0.5
+                if z > 0 and x > 0:
+                    congestion_map[x - 1, z - 1 ] += 0.5
+                    congestion_map[x - 1, z] += 0.5
+                    congestion_map[x, z - 1] += 0.5
+                elif z <= 0:
+                    congestion_map[x - 1, z] += 0.5
+                elif x <= 0:
+                    congestion_map[x, z - 1] += 0.5
+
+                if z < 9 and x < 9:
+                    congestion_map[x + 1, z + 1 ] += 0.5
+                    congestion_map[x + 1, z] += 0.5
+                    congestion_map[x, z + 1] += 0.5
+                elif z >= 9:
+                    congestion_map[x + 1, z] += 0.5
+                elif x >= 9:
+                    congestion_map[x, z + 1] += 0.5
 
         # overal congestion map update
         congestion_map[congestion_map < 1] = 0.0
@@ -182,15 +182,16 @@ class DTEngine():
         for track in self.tracks.values():
             if not track.confirmed:
                 continue
+            # print(track.id)
             data = deepcopy(self.pose_data)[track.pose_id]
             data["id"] = track.id
             data["isFallen"] = track.isFallen
             data["isWalking"] = track.isWalking
-            data["joints"] = [] if track.isWalking else self.extract_bones(track.poses[1 if 1 in track.poses.keys() else 0])
+            data["joints"] = [] if track.isWalking else self.extract_bones(track.poses[2 if 2 in track.poses.keys() else 1 if 1 in track.poses.keys() else 0])
             data["location"] = track.location
             data["direction"] = track.direction
             data["height"] = track.height
-            data["warning"] = True if self.zone(track.location) == 1 else False
+            data["warning"] = self.warning_check(track.location)
             result["persons"].append(data)
 
         # add fallen persons
@@ -203,7 +204,7 @@ class DTEngine():
             data["location"] = track.location
             data["direction"] = track.direction
             data["height"] = track.height
-            data["warning"] = True if self.zone(track.location) == 1 else False
+            data["warning"] = self.warning_check(track.location)
             result["persons"].append(data)
 
         return result
@@ -299,3 +300,8 @@ class DTEngine():
             return 3
         else:
             return 4
+
+    def warning_check(self, location):
+        x, z = location.values()
+        x1, z1, x2, z2 = self.warning_zone.values()
+        return True if x > x1 and x < x2 and z > z1 and z < z2 else False

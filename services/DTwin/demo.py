@@ -1,31 +1,34 @@
-from time import sleep
-import numpy as np
-import json
+from modules.Aktar_AI.Pose.pose_estimation import PoseEstimator
+from modules.Aktar_OS.DataBase.dt_db import DTdatabase
+from modules.Aktar_AI.DTwin.dt_engine import DTEngine
+from modules.Aktar_C.streaming import StreamerV1
 
 
-class locEngine_demo():
-    def __init__(self):
-        with open('service_dt/walk-data.json', 'r') as f:
-            self.walking_model = json.load(f)
-        self.locs = np.arange(0, 6.35, 0.1)
+class LiveDT():
+    def __init__(self, cfg):
+        self.estimator = PoseEstimator(cfg['pose_estimation'])
+        self.database = DTdatabase(cfg['mongodb'])
+        self.engine = DTEngine(cfg["engine"])
+        self.vid1 = StreamerV1(cfg["stream"][0])
+        self.vid2 = StreamerV1(cfg["stream"][1])
+        self.vid1.thread.start()
+        self.vid2.thread.start()
 
-    def find(self):
-        pose_id = 0
-        loc_id = 0
+    def generator(self):
         while True:
-            sleep(0.1)
-            if pose_id > 7:
-                pose_id = 0
-            data = self.walking_model[pose_id]
-            if loc_id > len(self.locs) - 1:
-                loc_id = 0
-            z = self.locs[loc_id]
-            x = 3
-            if z > 5:
-                data["fallen"] = True
+            ret1, frame1 = self.vid1.read_last()
+            ret2, frame2 = self.vid2.read_last()
+            frames = [frame1, frame2]
+            if ret1 and ret2:
+                all_cams_poses = self.estimator(frames)
+                result = self.engine.step(all_cams_poses)
+                if len(result["persons"]):
+                    dt_doc = {
+                        'id': 1, 'height': result["persons"][0]['height'], 'location': result["persons"][0]['location'], 'warning': result["persons"][0]['warning']}
+                    self.database.update_dt(dt_doc)
             else:
-                data["fallen"] = False
-            data["location"] = {"x": x+2.5, "z": z-0.5}
-            pose_id += 1
-            loc_id += 1
-            yield [data]
+                break
+                # self.vid.release()
+                # self.vid = StreamerV1("assets/people2_2.avi")
+                # self.vid.thread.start()
+            yield result

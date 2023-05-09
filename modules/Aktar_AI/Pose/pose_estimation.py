@@ -11,8 +11,8 @@ class PoseEstimator(object):
 
     def __call__(self, imgs):
         stride = 8
-        base_height = 256
-        conf_thresh = 5
+        base_height = 512
+        conf_thresh = 10
         scaled_imgs = []
         for img in imgs:
             input_scale = base_height / img.shape[1]
