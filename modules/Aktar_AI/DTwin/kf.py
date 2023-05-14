@@ -85,9 +85,3 @@ class DynamicKF(object):
         # Update error covariance matrix
         self.P = (I - (K * self.H)) * self.P  # Eq.(13)
         return self.x[0:2]
-
-    def update(self, ms_location):
-        if ms_location:
-            z = np.array(ms_location).reshape((2, 1))
-            # self._predict()
-            self._update(z)

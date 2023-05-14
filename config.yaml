@@ -10,8 +10,8 @@ stream:
   mongodb:
     host: 0.0.0.0
     port: 27017
-    database: Aktar
-    collection: CAM
+    db_name: Aktar
+    username: CAM
 
 cdm:
   body_thresh: 0.80
@@ -69,8 +69,8 @@ cdm:
   mongodb:
     host: 0.0.0.0
     port: 27017
-    database: Aktar
-    collection: CDM
+    db_name: Aktar
+    username: CDM
     queue_maxsize: 10
 
 dt:
@@ -118,5 +118,5 @@ dt:
   mongodb:
     host: 0.0.0.0
     port: 27017
-    database: Aktar
-    collection: DT
+    db_name: Aktar
+    username: DT

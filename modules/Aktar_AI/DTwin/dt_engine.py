@@ -1,8 +1,13 @@
+from cv2 import boundingRect
 from copy import deepcopy
+from time import time
 import numpy as np
+import random
+import base64
 import json
+import cv2
 
-from modules.Aktar_AI.DTwin.utils import euclidean_squared_distance2, linear_assignment, match_by_location
+from modules.Aktar_AI.DTwin.utils import euclidean_squared_distance2, linear_assignment, match_by_location, refine_box_get_body
 from modules.Aktar_AI.DTwin.mapping import PointMapper
 from modules.Aktar_AI.DTwin.track import Track
 
@@ -16,12 +21,13 @@ class DTEngine():
         self.missed_tracks = {}
         self.fallen_tracks = {}
         self.list_of_ids = list(range(1000, 0, -1))
+        self.list_of_colors = ["%06x" % random.randint(0, 0xFFFFFF) for _ in self.list_of_ids]
         self.warning_zone = cfg['warning_zone']
         self.congestion_map = np.zeros((40, 40), dtype="float") # for a 10 by 10 square meter place, resolution: 1 meter, stride = 0.5 meter
+        self.best_scores = (125, 2e4, 2) # intensity, area, aspect_ratio
 
-    def step(self, all_cams_poses):
+    def step(self, frames, num_cams, all_cams_poses):
 
-        num_cams = len(all_cams_poses)
         all_tracks = {track.id: np.array(track.location_filter.x[:2]).reshape(2) for track in self.tracks.values()}
         all_m_trk_ids = set()
 
@@ -34,8 +40,15 @@ class DTEngine():
             poses = all_cams_poses[cam_id]
 
             # filter by confidence
-            poses = np.array([pose[:-1].reshape(-1, 3)[:, :2] for pose in poses if pose[-1] > 15])
+            poses = np.array([pose[:-1].reshape(-1, 3)[:, :2] for pose in poses if pose[-1] > 10])
             # poses = remove_too_close_poses(poses)
+            boxes = np.array([boundingRect(pose[(pose[:, 0] > 0) * (pose[:, 1] > 0)]) for pose in poses])
+            bodies, scores = refine_box_get_body(frames[cam_id].copy(), boxes)
+            if scores:
+                good_img = scores[0] > 50 and scores[0] < 200 and scores[1] > 5e3 and scores[1] < 5e10 and scores[2] > 1.5 and scores[2] < 2.7
+                score_error = abs(scores[0] - self.best_scores[0]) + \
+                                abs(scores[1] - self.best_scores[1]) + \
+                                abs(scores[2] - self.best_scores[2])
 
             est_ids = list(range(len(poses)))
             trk_ids = list(tracks.keys())                
@@ -54,9 +67,15 @@ class DTEngine():
                 or update the matched track.
             '''
             for est_id in u_est_ids:
+
                 pose = poses[est_id]
+                body = bodies[est_id] if good_img[est_id] else []
+                se = score_error[est_id] # score error
+
+                # box_score = find_box_score(box)
                 simplified_pose = self.simplify_pose(pose)
                 neck, _, ankle = simplified_pose
+                
                 posture = self.process_pose(simplified_pose)
                 ms_location = self.mapper.map(cam_id, ankle) if ankle else None
                 if not ms_location:
@@ -68,23 +87,26 @@ class DTEngine():
 
                 if mached_idx >= 0:
                     trk_id = all_trks_ids[mached_idx]
-                    self.tracks[trk_id].update(cam_id, pose, ms_location, ms_height)
+                    self.tracks[trk_id].update(cam_id, pose, body, se, ms_location, ms_height)
                 else:
                     trk_id = self.list_of_ids.pop()
-                    self.tracks[trk_id] = Track(trk_id, cam_id, pose, ms_location, ms_height)
+                    self.tracks[trk_id] = Track(trk_id, cam_id, pose, body, se, ms_location, ms_height)
 
             '''
                 find location and height for new estimations of matched tracks and update them.
             '''
             for trk_id, est_id in matches:
 
+                track = self.tracks[trk_id]
+
                 # pose extraction and analysis
                 pose = poses[est_id]
+                body = bodies[est_id] if good_img[est_id] else []
+                se = score_error[est_id] # score error
+
                 simplified_pose = self.simplify_pose(pose)
                 neck, hip, ankle = simplified_pose
                 posture = self.process_pose(simplified_pose)
-
-                track = self.tracks[trk_id]
 
                 if posture == "fall":
                     # fall measurements
@@ -109,7 +131,7 @@ class DTEngine():
                     ms_height = self.mapper.height(cam_id, ms_location, neck) if ms_location and neck and posture == "stand" else None
 
                     # update the matched track
-                    track.update(cam_id, pose, ms_location, ms_height)
+                    track.update(cam_id, pose, body, se, ms_location, ms_height)
 
                 # update set of matched track ids
                 all_m_trk_ids.add(trk_id)
@@ -178,13 +200,23 @@ class DTEngine():
             congestion = {"x": x, "z": z}
             result["congestions"].append(congestion)
 
-        # add active persons
+        # add not-fallen active confirmed persons
+        result["person_current_count"] = len(self.tracks.values())
         for track in self.tracks.values():
             if not track.confirmed:
                 continue
             # print(track.id)
             data = deepcopy(self.pose_data)[track.pose_id]
             data["id"] = track.id
+            best_bodies = []
+            for body in track.best_body.values():
+                if not len(body):
+                    continue
+                _, im_arr = cv2.imencode('.jpg', body[0])
+                im_bytes = im_arr.tobytes()
+                im_b64 = base64.b64encode(im_bytes).decode()
+                best_bodies.append(im_b64)
+            data["best_bodies"] = best_bodies
             data["isFallen"] = track.isFallen
             data["isWalking"] = track.isWalking
             data["joints"] = [] if track.isWalking else self.extract_bones(track.poses[2 if 2 in track.poses.keys() else 1 if 1 in track.poses.keys() else 0])
@@ -198,6 +230,7 @@ class DTEngine():
         for track in self.fallen_tracks.values():
             data = deepcopy(self.pose_data)[track.pose_id]
             data["id"] = track.id
+            data["best_bodies"] = []
             data["isFallen"] = track.isFallen
             data["isWalking"] = track.isWalking
             data["joints"] = []

@@ -1,9 +1,11 @@
 from scipy.optimize import linear_sum_assignment
 from copy import deepcopy
 import numpy as np
+import cv2
 
 
-INF_COST = 38
+INF_COST_I = 38 # Pixel
+INF_COST_R = 100 # Centimeter
 
 
 def get_box_from_pose(pose):
@@ -132,7 +134,7 @@ def _get_assignment_matches(cost, row_ids, col_ids, m_rows, m_cols):
     unmatched_col_ids = [col_ids[col] for col in unmatched_cols]
     matches = []
     for row, col in zip(m_rows, m_cols):
-        if cost[row, col] < INF_COST:
+        if cost[row, col] < INF_COST_I:
             matches.append((row_ids[row], col_ids[col]))
         else:
             unmatched_row_ids.append(row_ids[row])
@@ -142,7 +144,7 @@ def _get_assignment_matches(cost, row_ids, col_ids, m_rows, m_cols):
 
 def remove_too_close_poses(poses):
     scost = euclidean_squared_distance2(poses, poses)
-    indexes = np.where(scost > 0 and scost < INF_COST)[0]
+    indexes = np.where(scost > 0 and scost < INF_COST_I)[0]
     return poses[indexes]
 
 
@@ -151,6 +153,29 @@ def match_by_location(locs, loc):
         locs = np.array(locs).reshape(-1, 2)
         loc = np.array(loc).reshape(-1, 2)
         dists =  np.linalg.norm(locs - loc, axis=1)
-        if dists.min() < 50:
+        if dists.min() < INF_COST_R:
             return dists.argmin()
     return -1
+
+
+def refine_box_get_body(image, boxes):
+    if not len(boxes):
+        return None, None
+    # box refinement
+    h, w = image.shape[:2]
+    x1s = np.clip(boxes[:, 0:1] - boxes[:, 2:3] // 10, 0, w)
+    y1s = np.clip(boxes[:, 1:2] - boxes[:, 3:4] // 5, 0, h)
+    x2s = np.clip(boxes[:, 0:1] + boxes[:, 2:3] + boxes[:, 2:3] // 10, 0, w)
+    y2s = np.clip(boxes[:, 1:2] + boxes[:, 3:4] + boxes[:, 3:4] // 10, 0, h)
+    boxes = np.concatenate((x1s, y1s, x2s, y2s), axis=1)
+    # extract bodies
+    bodies = [image[y1: y2, x1: x2, :] for (x1, y1, x2, y2) in boxes]
+    hsv_img = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+    # ar: area, as: aspect ratio
+    bodies_ar_as = np.array([((y2 - y1) * (x2 - x1), (y2 - y1) / (x2 - x1)) for (x1, y1, x2, y2) in boxes])
+    bodies_ar, bodies_as = bodies_ar_as[:, 0], bodies_ar_as[:, 1]
+    # in: intensity
+    bodies_in = np.array([hsv_img[y1: y2, x1: x2, 2].sum() for (x1, y1, x2, y2) in boxes]) / bodies_ar
+    # scores = bodies_in > 50 * bodies_ar > 5000 * bodies_as > 1.5 * bodies_as < 3
+    scores = (bodies_in, bodies_ar, bodies_as)
+    return bodies, scores

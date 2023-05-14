@@ -176,8 +176,8 @@ def dt_live(ws):
     for data in live_dt.generator():
         # try:
         ws.send(json.dumps({"data": data}))
-        # except websockets.exceptions.ConnectionClosedError:
-        # return
+        # except ws.exceptions.ConnectionClosedError:
+        #     return
 
 
 @app.route("/get", methods=["GET"])
@@ -189,26 +189,44 @@ def get_cameras():
         return {"message": "Failed to load the cameras from database"}, response_code["bad_request"]
 
 
-@app.route("/cdm", methods=["GET"])
-def customer_data_manager():
-    try:
-        persons = cdm_col.get_docs()
-        public_persons = []
-        for person in persons:
-            public_person = {
-                "id": person["id"], "best_body": person[f'best_body_{person["body_counter"]}']}
-            public_persons.append(public_person)
-        return jsonify({"persons": public_persons}), response_code["ok"]
-    except:
-        return {"message": "Failed to load the customer info from database"}, response_code["bad_request"]
-
-
 @app.route("/cdm_status", methods=["GET"])
 def cdm_status():
     try:
-        return jsonify({"cdm_status": cdm_engine.running}), response_code["ok"]
+        return jsonify({"cdm_status": True}), response_code["ok"]
     except:
         return {"message": "Failed to load the customer info from database"}, response_code["bad_request"]
+# def cdm_status():
+#     try:
+#         return jsonify({"cdm_status": cdm_engine.running}), response_code["ok"]
+#     except:
+#         return {"message": "Failed to load the customer info from database"}, response_code["bad_request"]
+
+
+@app.route("/cdm", methods=["GET"])
+def customer_data_manager():
+    try:
+        docs = dt_col.get_docs()
+        public_persons = []
+        if len(docs):
+            persons = docs[0]['persons']
+            for person in persons:
+                public_person = {
+                    "id": person["id"], "best_body": person['best_bodies'][-1]}
+                public_persons.append(public_person)
+        return jsonify({"persons": public_persons}), response_code["ok"]
+    except:
+        return {"message": "Failed to load the customer info from database"}, response_code["bad_request"]
+# def customer_data_manager():
+#     try:
+#         persons = cdm_col.get_docs()
+#         public_persons = []
+#         for person in persons:
+#             public_person = {
+#                 "id": person["id"], "best_body": person[f'best_body_{person["body_counter"]}']}
+#             public_persons.append(public_person)
+#         return jsonify({"persons": public_persons}), response_code["ok"]
+#     except:
+#         return {"message": "Failed to load the customer info from database"}, response_code["bad_request"]
 
 
 @app.route("/profile", methods=["POST"])
@@ -216,47 +234,73 @@ def profile_manager():
     req = request.get_json()
     _id = req["id"]
     try:
-        persons = cdm_col.get_docs()
-        dt_doc = dt_col.get_docs()
-        if dt_doc:
-            height = int(dt_col.get_docs()[0]['height'])
-            trajectory = dt_col.get_docs()[0]['location_history']
-        else:
-            height = None
+        persons = dt_col.get_docs()[0]['persons']
         for person in persons:
             if person["id"] == _id:
-                faces = [person[f"best_face_{count+1}"]
-                         for count in range(person["face_counter"])]
-                bodies = [person[f"best_body_{count+1}"]
-                          for count in range(person["body_counter"])]
-                times = person["time"]
-
-                trajectory = [{"location": {"x": 10, "z": 10}}, {"location": {"x": 1, "z": 1}}, {"location": {"x": 2, "z": 2}},
-                              {"location": {"x": 3, "z": 3}}, {"location": {"x": 4, "z": 4}}, {"location": {"x": 3, "z": 5}},
-                              {"location": {"x": 2, "z": 6}}, {"location": {"x": 1, "z": 5}}, {"location": {"x": 1, "z": 4}},
-                              {"location": {"x": 2, "z": 3}}, {"location": {"x": 2, "z": 2}}, {"location": {"x": 2, "z": 1}}]
-
-                public_person = {"id": _id, "faces": faces,
-                                 "bodies": bodies, "times": times, "height": height,
-                                 "trajectory": trajectory}
+                height = int(person['height'])
+                bodies = person['best_bodies']
+                trajectory = [{'location': location} for location in person['trajectory']]
+                public_person = {"id": _id, "faces": [], "bodies": bodies, "times": [], "height": height, "trajectory": trajectory}
                 break
         return jsonify({"persons": public_person}), response_code["ok"]
     except:
         return {"message": "Failed to load the customer info from database"}, response_code["bad_request"]
+# def profile_manager():
+#     req = request.get_json()
+#     _id = req["id"]
+#     try:
+#         persons = cdm_col.get_docs()
+#         dt_doc = dt_col.get_docs()
+#         if dt_doc:
+#             height = int(dt_col.get_docs()[0]['height'])
+#             trajectory = dt_col.get_docs()[0]['location_history']
+#         else:
+#             height = None
+#         for person in persons:
+#             if person["id"] == _id:
+#                 faces = [person[f"best_face_{count+1}"]
+#                          for count in range(person["face_counter"])]
+#                 bodies = [person[f"best_body_{count+1}"]
+#                           for count in range(person["body_counter"])]
+#                 times = person["time"]
+
+#                 trajectory = [{"location": {"x": 0, "z": 0}}, {"location": {"x": 1, "z": 1}}, {"location": {"x": 2, "z": 2}},
+#                               {"location": {"x": 3, "z": 3}}, {"location": {"x": 4, "z": 4}}, {"location": {"x": 3, "z": 5}},
+#                               {"location": {"x": 2, "z": 6}}, {"location": {"x": 1, "z": 5}}, {"location": {"x": 1, "z": 4}},
+#                               {"location": {"x": 2, "z": 3}}, {"location": {"x": 2, "z": 2}}, {"location": {"x": 2, "z": 1}}]
+
+#                 public_person = {"id": _id, "faces": faces,
+#                                  "bodies": bodies, "times": times, "height": height,
+#                                  "trajectory": trajectory}
+#                 break
+#         return jsonify({"persons": public_person}), response_code["ok"]
+#     except:
+#         return {"message": "Failed to load the customer info from database"}, response_code["bad_request"]
 
 
 @app.route("/insight", methods=["GET"])
 def insight_manager():
     try:
-        persons = cdm_col.get_docs()
-        current_count = 0
-        for person in persons:
-            time = person["time"][-1]
-            if datetime.strptime(time, "%Y-%m-%d %H:%M:%S").timestamp() > datetime.now().timestamp() - 5:
-                current_count += 1
-        return jsonify({"person_current_count": current_count, "person_total_count": len(persons)}), response_code["ok"]
+        current_count = None
+        person_total_count = None
+        docs = dt_col.get_docs()
+        if len(docs):
+            person_total_count = len(docs[0]['persons'])
+            current_count = docs[0]['person_current_count']
+        return jsonify({"person_current_count": current_count, "person_total_count": person_total_count}), response_code["ok"]
     except:
         return {"message": "Failed to load the customer info from database"}, response_code["bad_request"]
+# def insight_manager():
+#     try:
+#         persons = cdm_col.get_docs()
+#         current_count = 0
+#         for person in persons:
+#             time = person["time"][-1]
+#             if datetime.strptime(time, "%Y-%m-%d %H:%M:%S").timestamp() > datetime.now().timestamp() - 5:
+#                 current_count += 1
+#         return jsonify({"person_current_count": current_count, "person_total_count": len(persons)}), response_code["ok"]
+#     except:
+#         return {"message": "Failed to load the customer info from database"}, response_code["bad_request"]
 
 
 @app.route("/add", methods=["POST"])

@@ -8,7 +8,7 @@ logger.info("Hello from database api module")
 class apiDB():
     def __init__(self, cfg):
         client = MongoClient(cfg["host"], cfg["port"])
-        self.collection = client[cfg["database"]][cfg["collection"]]
+        self.collection = client[cfg["db_name"]][cfg["username"]]
 
     def add_cam(self, camera):
         self.collection.insert_one(camera)

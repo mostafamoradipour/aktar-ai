@@ -1,7 +1,6 @@
 from time import time
 import numpy as np
 
-from modules.Aktar_AI.DTwin.utils import get_box_from_pose
 from modules.Aktar_AI.DTwin.kf import StaticKF, DynamicKF
 
 
@@ -10,12 +9,16 @@ class Track(object):
                  trk_id,
                  cam_id,
                  pose,
+                 body,
+                 se,
                  ms_location,
                  ms_height,
                  ):
         self.id = trk_id
         self.poses = {cam_id: pose}
-        self.boxes = {cam_id: get_box_from_pose(pose)}
+        self.best_body = {cam_id: body} if len(body) else {cam_id: []}
+        self.best_error = {cam_id: se} if len(body) else {cam_id: np.Inf}
+
         self.location_filter = DynamicKF(init_location=ms_location)
         self.height_filter = StaticKF(init_height=ms_height)
 
@@ -38,11 +41,18 @@ class Track(object):
         self.isFallen = False
         self.fall_status = {"location": None, "direction": None, "time": None}
 
-    def update(self, cam_id, pose, ms_location, ms_height):
+    def update(self, cam_id, pose, body, se, ms_location, ms_height):
         self.poses[cam_id] = pose
-        self.boxes = {cam_id: get_box_from_pose(pose)}
 
-        self.location_filter.update(ms_location)
+        if cam_id not in self.best_error.keys():
+            self.best_error[cam_id] = np.Inf
+        if len(body) and se < self.best_error[cam_id]:
+            self.best_body[cam_id] = [body]
+            self.best_error[cam_id] = se
+        else:
+            self.best_body[cam_id] = []
+
+        self.location_filter._update(np.array(ms_location).reshape((2, 1)))
 
         if ms_height:
             self.height_filter.update(ms_height)

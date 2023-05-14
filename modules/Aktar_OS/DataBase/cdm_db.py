@@ -10,7 +10,7 @@ class cdmDB():
         host = cfg['host']
         port = int(cfg['port'])
         client = MongoClient(host, port)
-        self.collection = client[cfg['database']][cfg['collection']]
+        self.collection = client[cfg['db_name']][cfg['username']]
         self.queue_size = cfg['queue_maxsize']
 
     def load_feature(self):
