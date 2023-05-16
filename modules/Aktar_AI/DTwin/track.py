@@ -10,14 +10,18 @@ class Track(object):
                  cam_id,
                  pose,
                  body,
-                 se,
+                 body_se,
+                 face,
+                 face_se,
                  ms_location,
                  ms_height,
                  ):
         self.id = trk_id
         self.poses = {cam_id: pose}
         self.best_body = {cam_id: body} if len(body) else {cam_id: []}
-        self.best_error = {cam_id: se} if len(body) else {cam_id: np.Inf}
+        self.best_body_error = {cam_id: body_se} if len(body) else {cam_id: np.Inf}
+        self.best_face = {cam_id: face} if len(face) else {cam_id: []}
+        self.best_face_error = {cam_id: face_se} if len(face) else {cam_id: np.Inf}
 
         self.location_filter = DynamicKF(init_location=ms_location)
         self.height_filter = StaticKF(init_height=ms_height)
@@ -41,16 +45,24 @@ class Track(object):
         self.isFallen = False
         self.fall_status = {"location": None, "direction": None, "time": None}
 
-    def update(self, cam_id, pose, body, se, ms_location, ms_height):
+    def update(self, cam_id, pose, body, body_se, face, face_se, ms_location, ms_height):
         self.poses[cam_id] = pose
 
-        if cam_id not in self.best_error.keys():
-            self.best_error[cam_id] = np.Inf
-        if len(body) and se < self.best_error[cam_id]:
+        if cam_id not in self.best_body_error.keys():
+            self.best_body_error[cam_id] = np.Inf
+        if len(body) and body_se < self.best_body_error[cam_id]:
             self.best_body[cam_id] = [body]
-            self.best_error[cam_id] = se
+            self.best_body_error[cam_id] = body_se
         else:
             self.best_body[cam_id] = []
+
+        if cam_id not in self.best_face_error.keys():
+            self.best_face_error[cam_id] = np.Inf
+        if len(face) and face_se < self.best_face_error[cam_id]:
+            self.best_face[cam_id] = [face]
+            self.best_face_error[cam_id] = face_se
+        else:
+            self.best_face[cam_id] = []
 
         self.location_filter._update(np.array(ms_location).reshape((2, 1)))
 

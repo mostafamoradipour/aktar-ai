@@ -36,10 +36,16 @@ class LiveDT():
                 # print(len(self.vid1.queue))
                 self.database.update_count(result['person_current_count'])
                 for person in result["persons"]:
-                    dt_doc = {'id': person['id'], 'location': person['location'], 'height': person['height'], 'best_bodies': person['best_bodies']}
+                    dt_doc = {'id': person['id'], 'location': person['location'], 'height': person['height'],\
+                                        'best_faces': person['best_faces'], 'best_bodies': person['best_bodies']}
                     self.database.update_persons(dt_doc)
             else:
                 break
+            # if len(result["persons"]):
+            #     if len(result["persons"][0]["best_bodies"]):
+            #         import json
+            #         with open("example.json", "w") as f:
+            #             json.dump(result, f)
             # print("dt engine: ", 1 / (time() - start_time))
             yield result
 

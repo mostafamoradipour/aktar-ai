@@ -13,13 +13,14 @@ class DTdatabase():
         results = list(cur)
         if len(results):
             self.collection.update_one({'doc_id':'customer_data', 'persons.id': dt_doc['id']},{'$push': {
-            # 'persons.$.best_faces': { '$each': dt_doc['best_faces'] },
+            'persons.$.best_faces': { '$each': dt_doc['best_faces'] },
             'persons.$.best_bodies': { '$each': dt_doc['best_bodies'] },
             'persons.$.trajectory': { '$each': [dt_doc['location']] },
             }, '$set': {'persons.$.height': dt_doc['height'] 
             }})
         else:
-            dt_doc_new = {'id':dt_doc['id'], 'trajectory':[dt_doc['location']], 'height': dt_doc['height'], 'best_bodies': dt_doc['best_bodies']}
+            dt_doc_new = {'id':dt_doc['id'], 'trajectory':[dt_doc['location']], 'height': dt_doc['height'],\
+                                        'best_faces': dt_doc['best_faces'], 'best_bodies': dt_doc['best_bodies']}
             self.collection.update_one({'doc_id':'customer_data'},{'$push': {'persons': dt_doc_new}}, upsert=True)
 
     def update_count(self, current_count):

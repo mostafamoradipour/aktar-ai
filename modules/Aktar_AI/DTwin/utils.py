@@ -1,4 +1,5 @@
 from scipy.optimize import linear_sum_assignment
+from cv2 import boundingRect
 from copy import deepcopy
 import numpy as np
 import cv2
@@ -158,24 +159,49 @@ def match_by_location(locs, loc):
     return -1
 
 
-def refine_box_get_body(image, boxes):
-    if not len(boxes):
+def get_bodies(image, poses):
+    if not len(poses):
         return None, None
-    # box refinement
+    body_boxes = np.array([boundingRect(pose[(pose[:, 0] > 0) * (pose[:, 1] > 0)]) for pose in poses])
+    # body box refinement
     h, w = image.shape[:2]
-    x1s = np.clip(boxes[:, 0:1] - boxes[:, 2:3] // 10, 0, w)
-    y1s = np.clip(boxes[:, 1:2] - boxes[:, 3:4] // 5, 0, h)
-    x2s = np.clip(boxes[:, 0:1] + boxes[:, 2:3] + boxes[:, 2:3] // 10, 0, w)
-    y2s = np.clip(boxes[:, 1:2] + boxes[:, 3:4] + boxes[:, 3:4] // 10, 0, h)
-    boxes = np.concatenate((x1s, y1s, x2s, y2s), axis=1)
+    x1s = np.clip(body_boxes[:, 0:1] - body_boxes[:, 2:3] // 10, 0, w)
+    y1s = np.clip(body_boxes[:, 1:2] - body_boxes[:, 3:4] // 5, 0, h)
+    x2s = np.clip(body_boxes[:, 0:1] + body_boxes[:, 2:3] + body_boxes[:, 2:3] // 10, 0, w)
+    y2s = np.clip(body_boxes[:, 1:2] + body_boxes[:, 3:4] + body_boxes[:, 3:4] // 10, 0, h)
+    body_boxes = np.concatenate((x1s, y1s, x2s, y2s), axis=1)
     # extract bodies
-    bodies = [image[y1: y2, x1: x2, :] for (x1, y1, x2, y2) in boxes]
+    bodies = [image[y1: y2, x1: x2, :] for (x1, y1, x2, y2) in body_boxes]
     hsv_img = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
     # ar: area, as: aspect ratio
-    bodies_ar_as = np.array([((y2 - y1) * (x2 - x1), (y2 - y1) / (x2 - x1)) for (x1, y1, x2, y2) in boxes])
+    bodies_ar_as = np.array([((y2 - y1) * (x2 - x1), (y2 - y1) / (x2 - x1)) for (x1, y1, x2, y2) in body_boxes])
     bodies_ar, bodies_as = bodies_ar_as[:, 0], bodies_ar_as[:, 1]
     # in: intensity
-    bodies_in = np.array([hsv_img[y1: y2, x1: x2, 2].sum() for (x1, y1, x2, y2) in boxes]) / bodies_ar
-    # scores = bodies_in > 50 * bodies_ar > 5000 * bodies_as > 1.5 * bodies_as < 3
-    scores = (bodies_in, bodies_ar, bodies_as)
-    return bodies, scores
+    bodies_in = np.array([hsv_img[y1: y2, x1: x2, 2].sum() for (x1, y1, x2, y2) in body_boxes]) / bodies_ar
+    body_scores = (bodies_in, bodies_ar, bodies_as)
+    return bodies, body_scores
+
+
+def get_faces(image, poses):
+    if not len(poses):
+        return None, None, None
+    poses = np.concatenate((poses[:, 0:2, :], poses[:, 15:, :]), axis=1) # keypoints related to face
+    face_exist = [(pose > 0).all() for pose in poses]
+    face_boxes = np.array([boundingRect(pose) for pose in poses])
+    # face box refinement
+    h, w = image.shape[:2]
+    x1s = np.clip(face_boxes[:, 0:1] - face_boxes[:, 2:3] // 10, 0, w)
+    y1s = np.clip(face_boxes[:, 1:2] - face_boxes[:, 3:4] // 2, 0, h)
+    x2s = np.clip(face_boxes[:, 0:1] + face_boxes[:, 2:3] + face_boxes[:, 2:3] // 10, 0, w)
+    y2s = np.clip(face_boxes[:, 1:2] + face_boxes[:, 3:4] - face_boxes[:, 3:4] // 10, 0, h)
+    face_boxes = np.concatenate((x1s, y1s, x2s, y2s), axis=1)
+    # extract faces
+    faces = [image[y1: y2, x1: x2, :] for (x1, y1, x2, y2) in face_boxes]
+    hsv_img = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+    # ar: area, as: aspect ratio
+    faces_ar_as = np.array([((y2 - y1) * (x2 - x1), (y2 - y1) / (x2 - x1)) for (x1, y1, x2, y2) in face_boxes])
+    faces_ar, faces_as = faces_ar_as[:, 0], faces_ar_as[:, 1]
+    # in: intensity
+    faces_in = np.array([hsv_img[y1: y2, x1: x2, 2].sum() for (x1, y1, x2, y2) in face_boxes]) / faces_ar
+    face_scores = (faces_in, faces_ar, faces_as)
+    return faces, face_scores, face_exist

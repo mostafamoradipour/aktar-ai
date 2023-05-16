@@ -1,4 +1,3 @@
-from cv2 import boundingRect
 from copy import deepcopy
 from time import time
 import numpy as np
@@ -7,7 +6,7 @@ import base64
 import json
 import cv2
 
-from modules.Aktar_AI.DTwin.utils import euclidean_squared_distance2, linear_assignment, match_by_location, refine_box_get_body
+from modules.Aktar_AI.DTwin.utils import euclidean_squared_distance2, linear_assignment, match_by_location, get_bodies, get_faces
 from modules.Aktar_AI.DTwin.mapping import PointMapper
 from modules.Aktar_AI.DTwin.track import Track
 
@@ -24,7 +23,8 @@ class DTEngine():
         self.list_of_colors = ["%06x" % random.randint(0, 0xFFFFFF) for _ in self.list_of_ids]
         self.warning_zone = cfg['warning_zone']
         self.congestion_map = np.zeros((40, 40), dtype="float") # for a 10 by 10 square meter place, resolution: 1 meter, stride = 0.5 meter
-        self.best_scores = (125, 2e4, 2) # intensity, area, aspect_ratio
+        self.best_body_scores = (125, 2e4, 2) # intensity, area, aspect_ratio
+        self.best_face_scores = (125, 2e3, 1.5) # intensity, area, aspect_ratio
 
     def step(self, frames, num_cams, all_cams_poses):
 
@@ -42,13 +42,23 @@ class DTEngine():
             # filter by confidence
             poses = np.array([pose[:-1].reshape(-1, 3)[:, :2] for pose in poses if pose[-1] > 10])
             # poses = remove_too_close_poses(poses)
-            boxes = np.array([boundingRect(pose[(pose[:, 0] > 0) * (pose[:, 1] > 0)]) for pose in poses])
-            bodies, scores = refine_box_get_body(frames[cam_id].copy(), boxes)
-            if scores:
-                good_img = scores[0] > 50 and scores[0] < 200 and scores[1] > 5e3 and scores[1] < 5e10 and scores[2] > 1.5 and scores[2] < 2.7
-                score_error = abs(scores[0] - self.best_scores[0]) + \
-                                abs(scores[1] - self.best_scores[1]) + \
-                                abs(scores[2] - self.best_scores[2])
+
+            bodies, body_scores = get_bodies(frames[cam_id].copy(), poses)
+            faces, face_scores, face_exist = get_faces(frames[cam_id].copy(), poses)
+
+            if body_scores:
+                good_body = body_scores[0] > 50 and body_scores[0] < 200 and body_scores[1] > 5e3 and \
+                                    body_scores[1] < 5e10 and body_scores[2] > 1.5 and body_scores[2] < 2.7
+                body_score_error = abs(body_scores[0] - self.best_body_scores[0]) + \
+                                    abs(body_scores[1] - self.best_body_scores[1]) + \
+                                    abs(body_scores[2] - self.best_body_scores[2])
+
+            if face_scores:
+                good_face = face_scores[0] > 50 and face_scores[0] < 200 and face_scores[1] > 1e3 and \
+                                    face_scores[1] < 5e10 and face_scores[2] > 1 and face_scores[2] < 2
+                face_score_error = abs(face_scores[0] - self.best_face_scores[0]) + \
+                                    abs(face_scores[1] - self.best_face_scores[1]) + \
+                                    abs(face_scores[2] - self.best_face_scores[2])
 
             est_ids = list(range(len(poses)))
             trk_ids = list(tracks.keys())                
@@ -68,9 +78,12 @@ class DTEngine():
             '''
             for est_id in u_est_ids:
 
+                # pose extraction and analysis
                 pose = poses[est_id]
-                body = bodies[est_id] if good_img[est_id] else []
-                se = score_error[est_id] # score error
+                body = bodies[est_id] if good_body[est_id] and face_exist[est_id] else []
+                face = faces[est_id] if good_face[est_id] and face_exist[est_id] else []
+                body_se = body_score_error[est_id] # body score error
+                face_se = face_score_error[est_id] # face score error
 
                 # box_score = find_box_score(box)
                 simplified_pose = self.simplify_pose(pose)
@@ -87,10 +100,10 @@ class DTEngine():
 
                 if mached_idx >= 0:
                     trk_id = all_trks_ids[mached_idx]
-                    self.tracks[trk_id].update(cam_id, pose, body, se, ms_location, ms_height)
+                    self.tracks[trk_id].update(cam_id, pose, body, body_se, face, face_se, ms_location, ms_height)
                 else:
                     trk_id = self.list_of_ids.pop()
-                    self.tracks[trk_id] = Track(trk_id, cam_id, pose, body, se, ms_location, ms_height)
+                    self.tracks[trk_id] = Track(trk_id, cam_id, pose, body, body_se, face, face_se, ms_location, ms_height)
 
             '''
                 find location and height for new estimations of matched tracks and update them.
@@ -101,8 +114,10 @@ class DTEngine():
 
                 # pose extraction and analysis
                 pose = poses[est_id]
-                body = bodies[est_id] if good_img[est_id] else []
-                se = score_error[est_id] # score error
+                body = bodies[est_id] if good_body[est_id] and face_exist[est_id] else []
+                face = faces[est_id] if good_face[est_id] and face_exist[est_id] else []
+                body_se = body_score_error[est_id] # body score error
+                face_se = face_score_error[est_id] # face score error
 
                 simplified_pose = self.simplify_pose(pose)
                 neck, hip, ankle = simplified_pose
@@ -131,7 +146,7 @@ class DTEngine():
                     ms_height = self.mapper.height(cam_id, ms_location, neck) if ms_location and neck and posture == "stand" else None
 
                     # update the matched track
-                    track.update(cam_id, pose, body, se, ms_location, ms_height)
+                    track.update(cam_id, pose, body, body_se, face, face_se, ms_location, ms_height)
 
                 # update set of matched track ids
                 all_m_trk_ids.add(trk_id)
@@ -208,6 +223,7 @@ class DTEngine():
             # print(track.id)
             data = deepcopy(self.pose_data)[track.pose_id]
             data["id"] = track.id
+            data["color"] = self.list_of_colors[track.id]
             best_bodies = []
             for body in track.best_body.values():
                 if not len(body):
@@ -217,9 +233,20 @@ class DTEngine():
                 im_b64 = base64.b64encode(im_bytes).decode()
                 best_bodies.append(im_b64)
             data["best_bodies"] = best_bodies
+            best_faces = []
+            for face in track.best_face.values():
+                if not len(face):
+                    continue
+                _, im_arr = cv2.imencode('.jpg', face[0])
+                im_bytes = im_arr.tobytes()
+                im_b64 = base64.b64encode(im_bytes).decode()
+                best_faces.append(im_b64)
+            data["best_faces"] = best_faces   
             data["isFallen"] = track.isFallen
             data["isWalking"] = track.isWalking
-            data["joints"] = [] if track.isWalking else self.extract_bones(track.poses[2 if 2 in track.poses.keys() else 1 if 1 in track.poses.keys() else 0])
+            pose_scores = np.array([(pose > 0).sum() for pose in track.poses.values()])
+            pose = track.poses[list(track.poses.keys())[pose_scores.argmax()]]
+            data["joints"] = [] if track.isWalking else self.extract_bones(pose)
             data["location"] = track.location
             data["direction"] = track.direction
             data["height"] = track.height
@@ -245,12 +272,12 @@ class DTEngine():
     def process_pose(self, simplified_pose):
         neck, hip, ankle = simplified_pose
         posture = None
-        if neck and hip:
-            neck_hip_slope = abs((hip[1] - neck[1]) / (hip[0] - neck[0] + 1e-9))
-            if neck_hip_slope < 0.5:
-                posture = "fall"
-            if neck_hip_slope > 2:
-                posture = "stand"
+        # if neck and hip:
+        #     neck_hip_slope = abs((hip[1] - neck[1]) / (hip[0] - neck[0] + 1e-9))
+        #     if neck_hip_slope < 0.5:
+        #         posture = "fall"
+        #     if neck_hip_slope > 2:
+        #         posture = "stand"
 
         if hip and ankle:
             hip_ankle_slope = abs((ankle[1] - hip[1]) / (ankle[0] - hip[0] + 1e-9))
@@ -259,12 +286,12 @@ class DTEngine():
             elif hip_ankle_slope > 2: 
                 posture = "stand"
 
-        if neck and ankle:
-            neck_ankle_slope = abs((ankle[1] - neck[1]) / (ankle[0] - neck[0] + 1e-9))
-            # if neck_ankle_slope < 0.5:
-            #     posture = "fall"
-            if neck_ankle_slope > 2:
-                posture = "stand"
+        # if neck and ankle:
+        #     neck_ankle_slope = abs((ankle[1] - neck[1]) / (ankle[0] - neck[0] + 1e-9))
+        #     if neck_ankle_slope < 0.5:
+        #         posture = "fall"
+        #     if neck_ankle_slope > 2:
+        #         posture = "stand"
 
         return posture
 

@@ -239,8 +239,9 @@ def profile_manager():
             if person["id"] == _id:
                 height = int(person['height'])
                 bodies = person['best_bodies']
+                faces = person['best_faces']
                 trajectory = [{'location': location} for location in person['trajectory']]
-                public_person = {"id": _id, "faces": [], "bodies": bodies, "times": [], "height": height, "trajectory": trajectory}
+                public_person = {"id": _id, "faces": faces, "bodies": bodies, "times": [], "height": height, "trajectory": trajectory}
                 break
         return jsonify({"persons": public_person}), response_code["ok"]
     except:
