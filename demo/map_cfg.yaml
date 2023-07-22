@@ -1,0 +1,16 @@
+0:
+  calibration_file: ../Mapping/data/parand-type3/calibration.yaml
+  image_points: ../Mapping/data/parand/122_img_pnts.npy
+  physical_points: ../Mapping/data/parand/122_phys_pnts.npy
+1:
+  calibration_file: ../Mapping/data/parand-type3/calibration.yaml
+  image_points: ../Mapping/data/parand/123_img_pnts.npy
+  physical_points: ../Mapping/data/parand/123_phys_pnts.npy
+2:
+  calibration_file: ../Mapping/data/parand-type3/calibration.yaml
+  image_points: ../Mapping/data/parand/124_img_pnts.npy
+  physical_points: ../Mapping/data/parand/124_phys_pnts.npy
+3:
+  calibration_file: ../Mapping/data/parand-type3/calibration.yaml
+  image_points: ../Mapping/data/parand/125_img_pnts.npy
+  physical_points: ../Mapping/data/parand/125_phys_pnts.npy

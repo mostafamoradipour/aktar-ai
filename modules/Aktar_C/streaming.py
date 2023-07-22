@@ -69,7 +69,7 @@ class StreamerV1(object):
     def read_input_uri(self):
         counter = 0
         while not self.exit_event.is_set():
-            # sleep(0.4)
+            sleep(0.02)
             ret, frame = self.stream.read()
             counter += 1
             with self.cond:

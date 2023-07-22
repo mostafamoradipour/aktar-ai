@@ -9,3 +9,5 @@
 *.pth
 *.trt
 *.glb
+*.pickle
+*.json

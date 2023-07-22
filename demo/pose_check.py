@@ -7,24 +7,27 @@ with open('assets/all_frames_poses.pickle', 'rb') as handle:
 
 cam_numbers = len(all_frames_poses[0])
 
-vid1 = cv2.VideoCapture("modules/Aktar_AI/DTwin/assets/parand/parand_123.avi")
-vid2 = cv2.VideoCapture("modules/Aktar_AI/DTwin/assets/parand/parand_124.avi")
-vid3 = cv2.VideoCapture("modules/Aktar_AI/DTwin/assets/parand/parand_125.avi")
+vid1 = cv2.VideoCapture("../Mapping/data/parand/parand_122.avi")
+vid2 = cv2.VideoCapture("../Mapping/data/parand/parand_123.avi")
+vid3 = cv2.VideoCapture("../Mapping/data/parand/parand_124.avi")
+vid4 = cv2.VideoCapture("../Mapping/data/parand/parand_125.avi")
 
 frame_number = 0
-while vid1.isOpened() and vid2.isOpened() and vid3.isOpened():
+while True:
     ret1, frame1 = vid1.read()
     ret2, frame2 = vid2.read()
     ret3, frame3 = vid3.read()
-    if ret1 and ret2 and ret3:
-        frames = [frame1, frame2, frame3]
+    ret4, frame4 = vid4.read()
+
+    if ret1 and ret2 and ret3 and ret4:
+        frames = [frame1, frame2, frame3, frame4]
         all_cams_poses = all_frames_poses[frame_number]
         for cam_idx in range(cam_numbers):
             cam_poses = all_cams_poses[cam_idx]
             cam_frame = frames[cam_idx]
             for pose in cam_poses:
                 conf = pose[-1]
-                if conf < 15:
+                if conf < 10:
                     continue
                 pose = pose[:-1].reshape(-1, 3)[:, :2]
                 for joint in pose:
@@ -40,4 +43,5 @@ while vid1.isOpened() and vid2.isOpened() and vid3.isOpened():
 vid1.release()
 vid2.release()
 vid3.release()
+vid4.release()
 cv2.destroyAllWindows()

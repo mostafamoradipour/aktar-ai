@@ -6,7 +6,7 @@ import base64
 import json
 import cv2
 
-from modules.Aktar_AI.DTwin.utils import euclidean_squared_distance2, linear_assignment, match_by_location, get_bodies, get_faces
+from modules.Aktar_AI.DTwin.utils import euclidean_squared_distance2, linear_assignment, match_by_location, demo_get_bodies
 from modules.Aktar_AI.DTwin.mapping import PointMapper
 from modules.Aktar_AI.DTwin.track import Track
 
@@ -24,7 +24,6 @@ class DTEngine():
         self.warning_zone = cfg['warning_zone']
         self.congestion_map = np.zeros((40, 40), dtype="float") # for a 10 by 10 square meter place, resolution: 1 meter, stride = 0.5 meter
         self.best_body_scores = (125, 2e4, 2) # intensity, area, aspect_ratio
-        self.best_face_scores = (125, 2e3, 1.5) # intensity, area, aspect_ratio
 
     def step(self, frames, num_cams, all_cams_poses):
 
@@ -39,12 +38,7 @@ class DTEngine():
             tracks = {track.id: track.poses[cam_id] for track in self.tracks.values() if cam_id in track.poses.keys()}
             poses = all_cams_poses[cam_id]
 
-            # filter by confidence
-            poses = np.array([pose[:-1].reshape(-1, 3)[:, :2] for pose in poses if pose[-1] > 10])
-            # poses = remove_too_close_poses(poses)
-
-            bodies, body_scores = get_bodies(frames[cam_id].copy(), poses)
-            faces, face_scores, face_exist = get_faces(frames[cam_id].copy(), poses)
+            bodies, body_scores = demo_get_bodies(frames[cam_id].copy(), poses)
 
             if body_scores:
                 good_body = (body_scores[0] > 50) * (body_scores[0] < 200) * (body_scores[1] > 5e3) * \
@@ -52,13 +46,6 @@ class DTEngine():
                 body_score_error = abs(body_scores[0] - self.best_body_scores[0]) + \
                                     abs(body_scores[1] - self.best_body_scores[1]) + \
                                     abs(body_scores[2] - self.best_body_scores[2])
-
-            if face_scores:
-                good_face = (face_scores[0] > 50) * (face_scores[0] < 200) * (face_scores[1] > 1e3) * \
-                                    (face_scores[1] < 5e10) * (face_scores[2] > 1) * (face_scores[2] < 2)
-                face_score_error = abs(face_scores[0] - self.best_face_scores[0]) + \
-                                    abs(face_scores[1] - self.best_face_scores[1]) + \
-                                    abs(face_scores[2] - self.best_face_scores[2])
 
             est_ids = list(range(len(poses)))
             trk_ids = list(tracks.keys())                
@@ -80,46 +67,30 @@ class DTEngine():
 
                 # pose extraction and analysis
                 pose = poses[est_id]
-                body = bodies[est_id] if good_body[est_id] and face_exist[est_id] else []
-                face = faces[est_id] if good_face[est_id] and face_exist[est_id] else []
+                body = bodies[est_id] if good_body[est_id] else []
                 body_se = body_score_error[est_id] # body score error
-                face_se = face_score_error[est_id] # face score error
 
-                # box_score = find_box_score(box)
-                simplified_pose = self.simplify_pose(pose)
-                neck, hip, ankle = simplified_pose
-                posture = self.process_pose(simplified_pose)
-
-                if posture == "fall":
+                # location measurement
+                ankle = pose[0]
+                ms_location = self.mapper.map(cam_id, ankle) if ankle else None
+                if not ms_location:
                     continue
-                    # fall measurements
-                    # fl = self.mapper.map(cam_id, hip)
-                    # fall_location = {"x": fl[0] / 100, "z": fl[1] / 100}
-                    # if ankle:
-                    #     x, z = self.mapper.map(cam_id, ankle)
-                    #     fall_direction = {"x": fl[0] - x, "z": fl[1] - z}
-                    # elif neck:
-                    #     x, z = self.mapper.map(cam_id, neck)
-                    #     fall_direction = {"x": x - fl[0], "z": z - fl[1]}
-                    # track.fall(cam_id, pose, fall_location, fall_direction)
+
+                # height measurement
+                neck = pose[1]
+                ms_height = self.mapper.height(cam_id, ms_location, neck) if neck and posture == "stand" else None
+
+                all_trks_ids, all_trks_locs = list(all_tracks.keys()), list(all_tracks.values())
+                mached_idx = match_by_location(all_trks_locs, ms_location)
+
+                if mached_idx >= 0:
+                    trk_id = all_trks_ids[mached_idx]
+                    track = self.tracks[trk_id]
+                    all_m_trk_ids.add(trk_id)
+                    track.update(cam_id, pose, body, body_se, ms_location, ms_height)
                 else:
-                    ms_location = self.mapper.map(cam_id, ankle) if ankle else None
-                    if not ms_location:
-                        continue
-
-                    ms_height = self.mapper.height(cam_id, ms_location, neck) if neck and posture == "stand" else None
-
-                    all_trks_ids, all_trks_locs = list(all_tracks.keys()), list(all_tracks.values())
-                    mached_idx = match_by_location(all_trks_locs, ms_location)
-
-                    if mached_idx >= 0:
-                        trk_id = all_trks_ids[mached_idx]
-                        track = self.tracks[trk_id]
-                        all_m_trk_ids.add(trk_id)
-                        track.update(cam_id, pose, body, body_se, face, face_se, ms_location, ms_height)
-                    else:
-                        trk_id = self.list_of_ids.pop()
-                        self.tracks[trk_id] = Track(trk_id, cam_id, pose, body, body_se, face, face_se, ms_location, ms_height)
+                    trk_id = self.list_of_ids.pop()
+                    self.tracks[trk_id] = Track(trk_id, cam_id, pose, body, body_se, ms_location, ms_height)
 
             '''
                 find location and height for new estimations of matched tracks and update them.
@@ -130,38 +101,21 @@ class DTEngine():
 
                 # pose extraction and analysis
                 pose = poses[est_id]
-                body = bodies[est_id] if good_body[est_id] and face_exist[est_id] else []
-                face = faces[est_id] if good_face[est_id] and face_exist[est_id] else []
+                body = bodies[est_id] if good_body[est_id] else []
                 body_se = body_score_error[est_id] # body score error
-                face_se = face_score_error[est_id] # face score error
 
-                simplified_pose = self.simplify_pose(pose)
-                neck, hip, ankle = simplified_pose
-                posture = self.process_pose(simplified_pose)
+                # location measurement
+                ankle = pose[0]
+                ms_location = self.mapper.map(cam_id, ankle) if ankle else None
+                if not ms_location:
+                    continue
+                
+                # height measurement
+                neck = pose[1]
+                ms_height = self.mapper.height(cam_id, ms_location, neck) if neck else None
 
-                if posture == "fall":
-                    # fall measurements
-                    fl = self.mapper.map(cam_id, hip)
-                    fall_location = {"x": fl[0] / 100, "z": fl[1] / 100}
-                    if ankle:
-                        x, z = self.mapper.map(cam_id, ankle)
-                        fall_direction = {"x": fl[0] - x, "z": fl[1] - z}
-                    elif neck:
-                        x, z = self.mapper.map(cam_id, neck)
-                        fall_direction = {"x": x - fl[0], "z": z - fl[1]}
-                    track.fall(cam_id, pose, fall_location, fall_direction)
-                else:
-                    # standing measurements
-                    # location measurement
-                    ms_location = self.mapper.map(cam_id, ankle) if ankle else None
-                    if not ms_location:
-                        continue
-
-                    # measure height 
-                    ms_height = self.mapper.height(cam_id, ms_location, neck) if ms_location and neck and posture == "stand" else None
-
-                    # update the matched track
-                    track.update(cam_id, pose, body, body_se, face, face_se, ms_location, ms_height)
+                # update the matched track
+                track.update(cam_id, pose, body, body_se, ms_location, ms_height)
 
                 # update set of matched track ids
                 all_m_trk_ids.add(trk_id)
@@ -248,43 +202,17 @@ class DTEngine():
                 im_b64 = base64.b64encode(im_bytes).decode()
                 best_bodies.append(im_b64)
             data["best_bodies"] = best_bodies
-            best_faces = []
-            for face in track.best_face.values():
-                if not len(face):
-                    continue
-                _, im_arr = cv2.imencode('.jpg', face[0])
-                im_bytes = im_arr.tobytes()
-                im_b64 = base64.b64encode(im_bytes).decode()
-                best_faces.append(im_b64)
-            data["best_faces"] = best_faces   
+            data["best_faces"] = []
             data["isFallen"] = track.isFallen
             data["isWalking"] = track.isWalking
             pose_scores = np.array([(pose > 0).sum() for pose in track.poses.values()])
             pose = track.poses[list(track.poses.keys())[pose_scores.argmax()]]
-            data["joints"] = [] if track.isWalking else self.extract_bones(pose)
+            data["joints"] = []
             data["location"] = track.location
             data["direction"] = track.direction
             data["height"] = track.height
             data["warning"] = self.warning_check(track.location)
             result["persons"].append(data)
-
-        # # add fallen persons
-        # for track in self.fallen_tracks.values():
-        #     if time() - track.fall_status["time"] > 10:
-        #         continue
-        #     data = deepcopy(self.pose_data)[track.pose_id]
-        #     data["id"] = track.id
-        #     data["color"] = self.list_of_colors[track.id]
-        #     data["best_bodies"] = []
-        #     data["best_faces"] = []
-        #     data["isFallen"] = track.isFallen
-        #     data["isWalking"] = track.isWalking
-        #     data["joints"] = []
-        #     data["location"] = track.location
-        #     data["direction"] = track.direction
-        #     data["height"] = track.height
-        #     data["warning"] = self.warning_check(track.location)
-        #     result["persons"].append(data)
 
         return result
 

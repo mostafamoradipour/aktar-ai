@@ -83,26 +83,30 @@ dt:
 
     mapping:
       0:
-        calibration_file: modules/Aktar_AI/DTwin/assets/calibration.yaml
-        image_points: modules/Aktar_AI/DTwin/assets/1_img_pnts.npy
-        physical_points: modules/Aktar_AI/DTwin/assets/1_phys_pnts.npy
+        calibration_file: ../Mapping/data/IR-datasheet/calibration.yaml
+        image_points: ../Mapping/data/mostafa/calibration/1_img_pnts.npy
+        physical_points: ../Mapping/data/mostafa/calibration/1_phys_pnts.npy
       1:
-        calibration_file: modules/Aktar_AI/DTwin/assets/calibration.yaml
-        image_points: modules/Aktar_AI/DTwin/assets/2_img_pnts.npy
-        physical_points: modules/Aktar_AI/DTwin/assets/2_phys_pnts.npy
+        calibration_file: ../Mapping/data/IR-datasheet/calibration.yaml
+        image_points: ../Mapping/data/mostafa/calibration/2_img_pnts.npy
+        physical_points: ../Mapping/data/mostafa/calibration/2_phys_pnts.npy
 
       # 0:
-      #   calibration_file: modules/Aktar_AI/DTwin/assets/type1/calibration.yaml
-      #   image_points: modules/Aktar_AI/DTwin/assets/parand/123_img_pnts.npy
-      #   physical_points: modules/Aktar_AI/DTwin/assets/parand/123_phys_pnts.npy
+      #   calibration_file: ../Mapping/data/parand-type3/calibration.yaml
+      #   image_points: ../Mapping/data/parand/122_img_pnts.npy
+      #   physical_points: ../Mapping/data/parand/122_phys_pnts.npy
       # 1:
-      #   calibration_file: modules/Aktar_AI/DTwin/assets/type1/calibration.yaml
-      #   image_points: modules/Aktar_AI/DTwin/assets/parand/124_img_pnts.npy
-      #   physical_points: modules/Aktar_AI/DTwin/assets/parand/124_phys_pnts.npy
+      #   calibration_file: ../Mapping/data/parand-type3/calibration.yaml
+      #   image_points: ../Mapping/data/parand/123_img_pnts.npy
+      #   physical_points: ../Mapping/data/parand/123_phys_pnts.npy
       # 2:
-      #   calibration_file: modules/Aktar_AI/DTwin/assets/type1/calibration.yaml
-      #   image_points: modules/Aktar_AI/DTwin/assets/parand/125_img_pnts.npy
-      #   physical_points: modules/Aktar_AI/DTwin/assets/parand/125_phys_pnts.npy
+      #   calibration_file: ../Mapping/data/parand-type3/calibration.yaml
+      #   image_points: ../Mapping/data/parand/124_img_pnts.npy
+      #   physical_points: ../Mapping/data/parand/124_phys_pnts.npy
+      # 3:
+      #   calibration_file: ../Mapping/data/parand-type3/calibration.yaml
+      #   image_points: ../Mapping/data/parand/125_img_pnts.npy
+      #   physical_points: ../Mapping/data/parand/125_phys_pnts.npy
 
     warning_zone: {"x1": 2.5, "z1": 4.5, "x2": 4.8, "z2": 6.35}
     # warning_zone: {"x1": 100, "z1": 100, "x2": 110, "z2": 110}
@@ -111,12 +115,20 @@ dt:
     0: rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=0.sdp?real_stream--rtp-caching=800
     1: rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800
 
-    # 0: modules/Aktar_AI/DTwin/assets/parand/parand_123.avi
-    # 1: modules/Aktar_AI/DTwin/assets/parand/parand_124.avi
-    # 2: modules/Aktar_AI/DTwin/assets/parand/parand_125.avi
+    # 0: ../Mapping/data/parand/parand_122.avi
+    # 1: ../Mapping/data/parand/parand_123.avi
+    # 2: ../Mapping/data/parand/parand_124.avi
+    # 3: ../Mapping/data/parand/parand_125.avi
+
+  demo_data: ../Mapping/data/parand/track/track_cdm_data_124_nasiri_employee.json
 
   mongodb:
     host: 0.0.0.0
     port: 27017
     db_name: Aktar
     username: DT
+
+  kafka:
+    server:
+      bootstrap.servers: localhost:9092
+    topic: "SourceKafkaTopic.Source"

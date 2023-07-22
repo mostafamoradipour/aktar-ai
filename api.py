@@ -1,7 +1,6 @@
 from flask import Flask, flash, request, send_from_directory
 from werkzeug.utils import secure_filename
 from flask import Flask, request, jsonify
-from datetime import datetime
 from flask_sock import Sock
 from flask_cors import CORS
 import argparse
@@ -14,7 +13,7 @@ import os
 
 from services.Stream.streamer import streamEngine
 from services.DataBase.aktar_api import apiDB
-from services.CDataM.manager import CDManager
+# from services.CDataM.manager import CDManager
 from services.DTwin.live import LiveDT
 
 
@@ -33,18 +32,18 @@ def allowed_file(filename):
         filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-# Define necessary databases
 with open('config.yaml', 'r') as f:
     cfg = yaml.safe_load(f)
 
+# Define necessary databases
 response_code = cfg["response_code"]
 cam_col = apiDB(cfg["stream"]["mongodb"])
-cdm_col = apiDB(cfg["cdm"]["mongodb"])
+# cdm_col = apiDB(cfg["cdm"]["mongodb"])
 dt_col = apiDB(cfg["dt"]['mongodb'])
 planes = []
 
 # Reset the databases
-cdm_col.reset()
+# cdm_col.reset()
 dt_col.reset()
 print("CDM and DT of Aktar reseted!")
 
@@ -52,7 +51,7 @@ print("CDM and DT of Aktar reseted!")
 stream_engine = streamEngine()
 live_dt = LiveDT(cfg["dt"])
 # live_dt.save_poses()
-cdm_engine = CDManager(cfg["cdm"])
+# cdm_engine = CDManager(cfg["cdm"])
 
 
 @app.route("/dt", methods=["GET"])
@@ -146,34 +145,35 @@ def get_frame():
         return {"message": "failed to read the url"}, response_code["bad_request"]
 
 
-@sock.route('/cdm')
-def cdm(ws):
-    while True:
-        message = json.loads(ws.receive())
-        command = message["command"]
-        try:
-            if command == "start":
-                cdm_engine.cam_urls = []
-                for camera in message["cameras"]:
-                    cdm_engine.cam_urls.append(camera["url"])
-                cdm_engine.start()
-                message = "CDM service started successfully"
-                print(message)
-            elif command == "stop":
-                cdm_engine.stop()
-                message = "CDM service stopped successfully"
-                print(message)
-            else:
-                message = f"The command '{command}' not supported in CDM service of Aktar"
-                print(message)
-        except:
-            message = "You send a bad request"
-            print(message)
+# @sock.route('/cdm')
+# def cdm(ws):
+#     while True:
+#         message = json.loads(ws.receive())
+#         command = message["command"]
+#         try:
+#             if command == "start":
+#                 cdm_engine.cam_urls = []
+#                 for camera in message["cameras"]:
+#                     cdm_engine.cam_urls.append(camera["url"])
+#                 cdm_engine.start()
+#                 message = "CDM service started successfully"
+#                 print(message)
+#             elif command == "stop":
+#                 cdm_engine.stop()
+#                 message = "CDM service stopped successfully"
+#                 print(message)
+#             else:
+#                 message = f"The command '{command}' not supported in CDM service of Aktar"
+#                 print(message)
+#         except:
+#             message = "You send a bad request"
+#             print(message)
 
 
 @sock.route('/dt')
 def dt_live(ws):
-    for data in live_dt.generator():
+    # for data in live_dt.generator():
+    for data in live_dt.demo():
         # try:
         ws.send(json.dumps({"data": data}))
         # except ws.exceptions.ConnectionClosedError:
