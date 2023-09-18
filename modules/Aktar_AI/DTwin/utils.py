@@ -5,8 +5,7 @@ import numpy as np
 import cv2
 
 
-INF_COST_I = 38 # Pixel
-INF_COST_R = 100 # Centimeter
+INF_COST = 100 
 
 
 def get_box_from_pose(pose):
@@ -60,8 +59,6 @@ def euclidean_squared_distance(input1, input2):
     Returns:
         numpy.array: distance matrix.
     """
-    input1 = input1.reshape(-1, 19*2)
-    input2 = input2.reshape(-1, 19*2)
     m, n = input1.shape[0], input2.shape[0]
     distmat = np.tile(np.power(input1, 2).sum(axis=1, keepdims=True), (1, n)) + \
             np.tile(np.power(input2, 2).sum(axis=1, keepdims=True), (1, m)).T
@@ -81,8 +78,8 @@ def euclidean_squared_distance2(input1, input2):
     """
     m, n = input1.shape[0], input2.shape[0]
     distmat = np.zeros((m, n))
-    input1 = input1.reshape(-1, 19*2)
-    input2 = input2.reshape(-1, 19*2)
+    input1 = input1.reshape(-1, 17*2)
+    input2 = input2.reshape(-1, 17*2)
     for i, inp1 in enumerate(input1):
         for j, inp2 in enumerate(input2):
             mask = np.array(inp1 > 0) * np.array(inp2 > 0)
@@ -107,7 +104,7 @@ def cosine_distance(input1, input2):
     return distmat
 
 
-def linear_assignment(cost, row_ids, col_ids):
+def linear_assignment(cost, row_ids, col_ids, inf_cost):
     """Solves the linear assignment problem.
     Parameters
     ----------
@@ -122,20 +119,21 @@ def linear_assignment(cost, row_ids, col_ids):
     List[tuple], List[int], List[int]
         Matched row and column IDs, unmatched row IDs, and unmatched column IDs.
     """
+    cost = cost.clip(0, inf_cost)
     m_rows, m_cols = linear_sum_assignment(cost)
     row_ids = np.fromiter(row_ids, int, len(row_ids))
     col_ids = np.fromiter(col_ids, int, len(col_ids))
-    return _get_assignment_matches(cost, row_ids, col_ids, m_rows, m_cols)
+    return _get_assignment_matches(cost, row_ids, col_ids, m_rows, m_cols, inf_cost)
 
 
-def _get_assignment_matches(cost, row_ids, col_ids, m_rows, m_cols):
+def _get_assignment_matches(cost, row_ids, col_ids, m_rows, m_cols, inf_cost):
     unmatched_rows = list(set(range(cost.shape[0])) - set(m_rows))
     unmatched_cols = list(set(range(cost.shape[1])) - set(m_cols))
     unmatched_row_ids = [row_ids[row] for row in unmatched_rows]
     unmatched_col_ids = [col_ids[col] for col in unmatched_cols]
     matches = []
     for row, col in zip(m_rows, m_cols):
-        if cost[row, col] < INF_COST_I:
+        if cost[row, col] < inf_cost:
             matches.append((row_ids[row], col_ids[col]))
         else:
             unmatched_row_ids.append(row_ids[row])
@@ -143,18 +141,12 @@ def _get_assignment_matches(cost, row_ids, col_ids, m_rows, m_cols):
     return matches, unmatched_row_ids, unmatched_col_ids
 
 
-def remove_too_close_poses(poses):
-    scost = euclidean_squared_distance2(poses, poses)
-    indexes = np.where(scost > 0 and scost < INF_COST_I)[0]
-    return poses[indexes]
-
-
 def match_by_location(locs, loc):
     if len(locs):
         locs = np.array(locs).reshape(-1, 2)
         loc = np.array(loc).reshape(-1, 2)
         dists =  np.linalg.norm(locs - loc, axis=1)
-        if dists.min() < INF_COST_R:
+        if dists.min() < INF_COST:
             return dists.argmin()
     return -1
 
@@ -185,7 +177,10 @@ def get_bodies(image, poses):
 def get_faces(image, poses):
     if not len(poses):
         return None, None, None
-    poses = np.concatenate((poses[:, 0:2, :], poses[:, 15:, :]), axis=1) # keypoints related to face
+    if len(poses[0]) == 17:
+        poses = poses[:, :5]
+    else:
+        poses = np.concatenate((poses[:, 0:2, :], poses[:, 15:, :]), axis=1) # keypoints related to face
     face_exist = [(pose > 0).all() for pose in poses]
     face_boxes = np.array([boundingRect(pose) for pose in poses])
     # face box refinement
@@ -193,55 +188,7 @@ def get_faces(image, poses):
     x1s = np.clip(face_boxes[:, 0:1] - face_boxes[:, 2:3] // 10, 0, w)
     y1s = np.clip(face_boxes[:, 1:2] - face_boxes[:, 3:4] // 2, 0, h)
     x2s = np.clip(face_boxes[:, 0:1] + face_boxes[:, 2:3] + face_boxes[:, 2:3] // 10, 0, w)
-    y2s = np.clip(face_boxes[:, 1:2] + face_boxes[:, 3:4] - face_boxes[:, 3:4] // 10, 0, h)
-    face_boxes = np.concatenate((x1s, y1s, x2s, y2s), axis=1)
-    # extract faces
-    faces = [image[y1: y2, x1: x2, :] for (x1, y1, x2, y2) in face_boxes]
-    hsv_img = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-    # ar: area, as: aspect ratio
-    faces_ar_as = np.array([((y2 - y1) * (x2 - x1), (y2 - y1) / (x2 - x1)) for (x1, y1, x2, y2) in face_boxes])
-    faces_ar, faces_as = faces_ar_as[:, 0], faces_ar_as[:, 1]
-    # in: intensity
-    faces_in = np.array([hsv_img[y1: y2, x1: x2, 2].sum() for (x1, y1, x2, y2) in face_boxes]) / faces_ar
-    face_scores = (faces_in, faces_ar, faces_as)
-    return faces, face_scores, face_exist
-
-
-def demo_get_bodies(image, poses):
-    if not len(poses):
-        return None, None
-    body_boxes = np.array([boundingRect(pose) for pose in poses])
-    # body box refinement
-    h, w = image.shape[:2]
-    x1s = np.clip(body_boxes[:, 0:1] - body_boxes[:, 2:3] // 20, 0, w)
-    y1s = np.clip(body_boxes[:, 1:2] - body_boxes[:, 3:4] // 20, 0, h)
-    x2s = np.clip(body_boxes[:, 0:1] + body_boxes[:, 2:3] + body_boxes[:, 2:3] // 20, 0, w)
-    y2s = np.clip(body_boxes[:, 1:2] + body_boxes[:, 3:4] + body_boxes[:, 3:4] // 20, 0, h)
-    body_boxes = np.concatenate((x1s, y1s, x2s, y2s), axis=1)
-    # extract bodies
-    bodies = [image[y1: y2, x1: x2, :] for (x1, y1, x2, y2) in body_boxes]
-    hsv_img = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-    # ar: area, as: aspect ratio
-    bodies_ar_as = np.array([((y2 - y1) * (x2 - x1), (y2 - y1) / (x2 - x1)) for (x1, y1, x2, y2) in body_boxes])
-    bodies_ar, bodies_as = bodies_ar_as[:, 0], bodies_ar_as[:, 1]
-    # in: intensity
-    bodies_in = np.array([hsv_img[y1: y2, x1: x2, 2].sum() for (x1, y1, x2, y2) in body_boxes]) / bodies_ar
-    body_scores = (bodies_in, bodies_ar, bodies_as)
-    return bodies, body_scores
-
-
-def demo_get_faces(image, poses):
-    if not len(poses):
-        return None, None, None
-    poses = np.concatenate((poses[:, 0:2, :], poses[:, 15:, :]), axis=1) # keypoints related to face
-    face_exist = [(pose > 0).all() for pose in poses]
-    face_boxes = np.array([boundingRect(pose) for pose in poses])
-    # face box refinement
-    h, w = image.shape[:2]
-    x1s = np.clip(face_boxes[:, 0:1] - face_boxes[:, 2:3] // 10, 0, w)
-    y1s = np.clip(face_boxes[:, 1:2] - face_boxes[:, 3:4] // 2, 0, h)
-    x2s = np.clip(face_boxes[:, 0:1] + face_boxes[:, 2:3] + face_boxes[:, 2:3] // 10, 0, w)
-    y2s = np.clip(face_boxes[:, 1:2] + face_boxes[:, 3:4] - face_boxes[:, 3:4] // 10, 0, h)
+    y2s = np.clip(face_boxes[:, 1:2] + face_boxes[:, 3:4] + face_boxes[:, 3:4] // 10, 0, h)
     face_boxes = np.concatenate((x1s, y1s, x2s, y2s), axis=1)
     # extract faces
     faces = [image[y1: y2, x1: x2, :] for (x1, y1, x2, y2) in face_boxes]

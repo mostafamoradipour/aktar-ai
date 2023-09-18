@@ -84,12 +84,12 @@ dt:
     mapping:
       0:
         calibration_file: ../Mapping/data/IR-datasheet/calibration.yaml
-        image_points: ../Mapping/data/mostafa/calibration/1_img_pnts.npy
-        physical_points: ../Mapping/data/mostafa/calibration/1_phys_pnts.npy
+        image_points: ../Mapping/data/home-mostafa/calibration/1_img_pnts.npy
+        physical_points: ../Mapping/data/home-mostafa/calibration/1_phys_pnts.npy
       1:
         calibration_file: ../Mapping/data/IR-datasheet/calibration.yaml
-        image_points: ../Mapping/data/mostafa/calibration/2_img_pnts.npy
-        physical_points: ../Mapping/data/mostafa/calibration/2_phys_pnts.npy
+        image_points: ../Mapping/data/home-mostafa/calibration/2_img_pnts.npy
+        physical_points: ../Mapping/data/home-mostafa/calibration/2_phys_pnts.npy
 
       # 0:
       #   calibration_file: ../Mapping/data/parand-type3/calibration.yaml

@@ -7,7 +7,13 @@
 *.png
 *.avi
 *.pth
+*.pt
 *.trt
 *.glb
 *.pickle
 *.json
+api.py
+./weights/*
+./demo/*
+./services/*
+./build/*

@@ -22,7 +22,7 @@ class DTEngine():
         self.list_of_ids = list(range(1000, 0, -1))
         self.list_of_colors = ["%06x" % random.randint(0, 0xFFFFFF) for _ in self.list_of_ids]
         self.warning_zone = cfg['warning_zone']
-        self.congestion_map = np.zeros((40, 40), dtype="float") # for a 10 by 10 square meter place, resolution: 1 meter, stride = 0.5 meter
+        self.congestion_map = np.zeros((20, 20), dtype="float") # for a 10 by 10 square meter place, resolution: 1 meter, stride = 0.5 meter
         self.best_body_scores = (125, 2e4, 2) # intensity, area, aspect_ratio
         self.best_face_scores = (125, 2e3, 1.5) # intensity, area, aspect_ratio
 
@@ -32,7 +32,7 @@ class DTEngine():
         all_m_trk_ids = set()
 
         # define current frame congestion map
-        congestion_map = np.zeros((40, 40), dtype="float")
+        congestion_map = np.zeros((20, 20), dtype="float")
 
         for cam_id in range(num_cams):
 
@@ -194,9 +194,9 @@ class DTEngine():
             if track.confirmed:
                 x, z = track.location_filter.x[:2] // 50
                 x, z = int(x), int(z)
-                congestion_map[x, z] += 0.5
+                congestion_map[x, z] += 1.5
                 if z > 0 and x > 0:
-                    congestion_map[x - 1, z - 1 ] += 0.5
+                    congestion_map[x - 1, z - 1] += 0.5
                     congestion_map[x - 1, z] += 0.5
                     congestion_map[x, z - 1] += 0.5
                 elif z <= 0:
@@ -205,7 +205,7 @@ class DTEngine():
                     congestion_map[x, z - 1] += 0.5
 
                 if z < 9 and x < 9:
-                    congestion_map[x + 1, z + 1 ] += 0.5
+                    congestion_map[x + 1, z + 1] += 0.5
                     congestion_map[x + 1, z] += 0.5
                     congestion_map[x, z + 1] += 0.5
                 elif z >= 9:
@@ -268,23 +268,23 @@ class DTEngine():
             data["warning"] = self.warning_check(track.location)
             result["persons"].append(data)
 
-        # # add fallen persons
-        # for track in self.fallen_tracks.values():
-        #     if time() - track.fall_status["time"] > 10:
-        #         continue
-        #     data = deepcopy(self.pose_data)[track.pose_id]
-        #     data["id"] = track.id
-        #     data["color"] = self.list_of_colors[track.id]
-        #     data["best_bodies"] = []
-        #     data["best_faces"] = []
-        #     data["isFallen"] = track.isFallen
-        #     data["isWalking"] = track.isWalking
-        #     data["joints"] = []
-        #     data["location"] = track.location
-        #     data["direction"] = track.direction
-        #     data["height"] = track.height
-        #     data["warning"] = self.warning_check(track.location)
-        #     result["persons"].append(data)
+        # add fallen persons
+        for track in self.fallen_tracks.values():
+            if time() - track.fall_status["time"] > 10:
+                continue
+            data = deepcopy(self.pose_data)[track.pose_id]
+            data["id"] = track.id
+            data["color"] = self.list_of_colors[track.id]
+            data["best_bodies"] = []
+            data["best_faces"] = []
+            data["isFallen"] = track.isFallen
+            data["isWalking"] = track.isWalking
+            data["joints"] = []
+            data["location"] = track.location
+            data["direction"] = track.direction
+            data["height"] = track.height
+            data["warning"] = self.warning_check(track.location)
+            result["persons"].append(data)
 
         return result
 

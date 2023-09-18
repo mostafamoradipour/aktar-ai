@@ -1,0 +1,29 @@
+dt:
+  pose_estimation:
+    vid1: /mnt/storage/projects/ultralytics/home-mostafa-yolov8s/movement_cam_1.json
+    vid2: /mnt/storage/projects/ultralytics/home-mostafa-yolov8s/movement_cam_2.json
+
+  engine:
+    pose_data: modules/Aktar_AI/DTwin/assets/pose_data.json
+
+    mapping:
+      0:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/IR-opencv/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/home-mostafa/calibration/1_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/home-mostafa/calibration/1_phys_pnts.npy
+      1:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/IR-opencv/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/home-mostafa/calibration/2_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/home-mostafa/calibration/2_phys_pnts.npy
+
+    warning_zones:
+      0: {"x1": 2.5, "z1": 4.5, "x2": 4.8, "z2": 6.35}
+
+  video:
+    0: /mnt/storage/projects/Aktar/Mapping/data/home-mostafa/video/movement_0.avi
+    1: /mnt/storage/projects/Aktar/Mapping/data/home-mostafa/video/movement_1.avi
+
+  kafka:
+    server:
+      bootstrap.servers: localhost:9092
+    topic: "SourceKafkaTopic.Source"
