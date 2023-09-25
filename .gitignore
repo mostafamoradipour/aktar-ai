@@ -11,3 +11,4 @@
 *.glb
 *.pickle
 *.json
+*.pt
