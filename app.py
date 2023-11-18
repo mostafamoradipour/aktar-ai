@@ -2,18 +2,18 @@ from confluent_kafka import Producer
 import json
 import yaml
 
-from modules.Aktar_AI.Pose.pose_estimation import PoseEstimator
-from modules.Aktar_AI.DTwin.dt_engine import DTEngine
-from modules.Aktar_C.streaming import StreamerV1
+from aktarai.pose.pose_estimator import PoseEstimator
+from aktarai.tracking.engine import TEngine
+from aktarai.streaming import StreamerV1
 
 
-def main():
+def main(user="mostafa"):
     with open('config.yaml', 'r') as f:
         cfg = yaml.safe_load(f)
-    cfg = cfg["dt"]
+    cfg = cfg[user]
 
     estimator = PoseEstimator(cfg['pose_estimation'])
-    engine = DTEngine(cfg["engine"])
+    engine = TEngine(cfg["engine"])
     vid1 = StreamerV1(cfg["stream"][0], max_queue_size=10)
     vid2 = StreamerV1(cfg["stream"][1], max_queue_size=10)
     # Create Producer instance

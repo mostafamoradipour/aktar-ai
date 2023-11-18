@@ -1,0 +1,150 @@
+mostafa:
+  detection:
+    weights: aktarai/detection/weights/yolov8s-pose.pt
+
+  recognition:
+    device: gpu
+    weights: aktarai/recognition/weights/osnet_x0_25_msmt17.onnx
+    input_size: [128, 256]
+
+  pose_estimation:
+    0: demo/home-mostafa/cam1.json
+    1: demo/home-mostafa/cam2.json
+
+  tracking:
+    pose_data: aktarai/tracking/assets/pose_data.json
+
+    mapping:
+      0:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/IR-opencv/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/home-mostafa/calibration/1_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/home-mostafa/calibration/1_phys_pnts.npy
+      1:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/IR-opencv/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/home-mostafa/calibration/2_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/home-mostafa/calibration/2_phys_pnts.npy
+
+    warning_zones:
+      0: {"x1": 3.0, "z1": 3.5, "x2": 4.9, "z2": 6.35}
+
+  video:
+    0: /mnt/storage/projects/Aktar/Mapping/data/home-mostafa/video/cam1.avi
+    1: /mnt/storage/projects/Aktar/Mapping/data/home-mostafa/video/cam2.avi
+
+  kafka:
+    server:
+      bootstrap.servers: localhost:9092
+    topic: "SourceKafkaTopic.Source"
+
+  result: "demo/home-mostafa/ai_result.json"
+
+
+#####################################################################################333
+
+
+parand-sub:
+  detection:
+    weights: aktarai/detection/weights/yolov8s-pose.pt
+
+  recognition:
+    device: gpu
+    weights: aktarai/recognition/weights/osnet_x0_25_msmt17.onnx
+    input_size: [128, 256]
+
+  pose_estimation:
+    0: demo/parand-sub/cam1.json
+    1: demo/parand-sub/cam2.json
+    2: demo/parand-sub/cam3.json
+    3: demo/parand-sub/cam4.json
+
+  tracking:
+    pose_data: aktarai/tracking/assets/pose_data.json
+
+    mapping:
+      0:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/parand-type3/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/calibration/122_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/calibration/122_phys_pnts.npy
+      1:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/parand-type3/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/calibration/123_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/calibration/123_phys_pnts.npy
+      2:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/parand-type3/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/calibration/124_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/calibration/124_phys_pnts.npy
+      3:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/parand-type3/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/calibration/125_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/calibration/125_phys_pnts.npy
+
+    warning_zones:
+      0: {"x1": 3.0, "z1": 4.0, "x2": 5.3, "z2": 5.85}
+
+  video:
+    0: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/video/cam1.avi
+    1: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/video/cam2.avi
+    2: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/video/cam3.avi
+    3: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/video/cam4.avi
+
+  kafka:
+    server:
+      bootstrap.servers: localhost:9092
+    topic: "SourceKafkaTopic.Source"
+
+  # result: "demo/parand-sub/ai_result.json"
+  result: "/mnt/storage/projects/Aktar/Mapping/data/parand-sub/track/final_parand4.json"
+
+
+#####################################################################################333
+
+
+parand-main:
+  pose_estimation:
+    0: demo/parand-main/cam1.json
+    1: demo/parand-main/cam2.json
+    2: demo/parand-main/cam3.json
+    3: demo/parand-main/cam4.json
+    4: demo/parand-main/cam5.json
+
+  tracking:
+    pose_data: aktarai/tracking/assets/pose_data.json
+
+    mapping:
+      0:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/parand-type3/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/parand-main/calibration/133_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/parand-main/calibration/133_phys_pnts.npy
+      1:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/parand-type3/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/parand-main/calibration/134_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/parand-main/calibration/134_phys_pnts.npy
+      2:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/parand-type3/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/parand-main/calibration/139_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/parand-main/calibration/139_phys_pnts.npy
+      3:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/parand-type3/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/parand-main/calibration/141_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/parand-main/calibration/141_phys_pnts.npy
+      4:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/parand-type3/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/parand-main/calibration/142_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/parand-main/calibration/142_phys_pnts.npy
+
+    warning_zones:
+      0: {"x1": 3.0, "z1": 4.0, "x2": 5.3, "z2": 5.85}
+
+  video:
+    0: /mnt/storage/projects/Aktar/Mapping/data/parand-main/video/cam1.avi
+    1: /mnt/storage/projects/Aktar/Mapping/data/parand-main/video/cam2.avi
+    2: /mnt/storage/projects/Aktar/Mapping/data/parand-main/video/cam3.avi
+    3: /mnt/storage/projects/Aktar/Mapping/data/parand-main/video/cam4.avi
+    4: /mnt/storage/projects/Aktar/Mapping/data/parand-main/video/cam5.avi
+
+  kafka:
+    server:
+      bootstrap.servers: localhost:9092
+    topic: "SourceKafkaTopic.Source"
+
+  result: "demo/parand-main/ai_result.json"
