@@ -1,0 +1,95 @@
+mostafa:
+
+  orchestration:
+    save: False
+    detection: True
+    recognition: True
+    tracking: True
+
+  kafka:
+    produce: True
+    server:
+      bootstrap.servers: localhost:9092
+    topic: "SourceKafkaTopic.Source"
+
+  stream:
+    # 0: rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=0.sdp?real_stream--rtp-caching=800
+    # 1: rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800
+    0: /mnt/storage/projects/Aktar/Aktar-develop/videos/home-mostafa/cam0.avi
+    1: /mnt/storage/projects/Aktar/Aktar-develop/videos/home-mostafa/cam1.avi
+
+  detection:
+    weights: aktarai/detection/weights/yolov8s-pose.pt
+
+  recognition:
+    device: gpu
+    weights: aktarai/recognition/weights/osnet_x0_25_msmt17.onnx
+    input_size: [128, 256]
+
+  tracking:
+    mapping:
+      0:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/IR-opencv/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/home-mostafa/calibration/1_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/home-mostafa/calibration/1_phys_pnts.npy
+      1:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/IR-opencv/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/home-mostafa/calibration/2_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/home-mostafa/calibration/2_phys_pnts.npy
+
+  warning_zones:
+    0: {"x1": 3.0, "z1": 3.5, "x2": 4.9, "z2": 6.35}
+
+
+#####################################################################################333
+
+
+parand-sub:
+
+  orchestration:
+    save: False
+    detection: True
+    recognition: True
+    tracking: True
+
+  kafka:
+    produce: True
+    server:
+      bootstrap.servers: localhost:9092
+    topic: "SourceKafkaTopic.Source"
+
+  stream:
+    0: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/video/cam1.avi
+    1: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/video/cam2.avi
+    2: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/video/cam3.avi
+    3: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/video/cam4.avi
+
+  detection:
+    weights: aktarai/detection/weights/yolov8s-pose.pt
+
+  recognition:
+    device: gpu
+    weights: aktarai/recognition/weights/osnet_x0_25_msmt17.onnx
+    input_size: [128, 256]
+
+  tracking:
+    mapping:
+      0:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/parand-type3/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/calibration/122_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/calibration/122_phys_pnts.npy
+      1:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/parand-type3/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/calibration/123_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/calibration/123_phys_pnts.npy
+      2:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/parand-type3/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/calibration/124_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/calibration/124_phys_pnts.npy
+      3:
+        calibration_file: /mnt/storage/projects/Aktar/Mapping/data/parand-type3/calibration.yaml
+        image_points: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/calibration/125_img_pnts.npy
+        physical_points: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/calibration/125_phys_pnts.npy
+
+  warning_zones:
+    0: {"x1": 3.0, "z1": 4.0, "x2": 5.3, "z2": 5.85}
