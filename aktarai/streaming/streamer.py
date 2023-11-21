@@ -1,11 +1,11 @@
-from cv2 import VideoCapture, CAP_GSTREAMER, INTER_AREA
+from cv2 import VideoCapture, CAP_GSTREAMER, INTER_AREA, CAP_PROP_FPS
 from threading import Thread, Condition, Event
 from subprocess import check_output
 from cv2 import resize as cv_resize
 from urllib.parse import urlparse
 from numpy import ndarray, uint8
 from collections import deque
-from time import sleep
+from time import time, sleep
 import sys
 import gi
 gi.require_version('Gst', '1.0')
@@ -56,6 +56,8 @@ class StreamerV1(object):
         else:
             self.stream = VideoCapture(input_uri)
 
+        self.fps = self.stream.get(CAP_PROP_FPS)
+
         assert isinstance(max_queue_size, int)
         self.max_queue_size = max_queue_size
         self.queue = deque([])
@@ -69,16 +71,38 @@ class StreamerV1(object):
     def read_input_uri(self):
         counter = 0
         while not self.exit_event.is_set():
-            sleep(0.078)
+            frame_time = time()
             ret, frame = self.stream.read()
-            counter += 1
             with self.cond:
                 if not ret:
                     self.exit_event.set()
                     self.cond.notify()
                     break
                 if counter % (self.frame_skip + 1) == 0:
-                    # counter = 0
+                    counter = 0
+                    if self.preprocess:
+                        frame = self.preprocess(frame)
+                        if frame:
+                            self.queue.append((frame_time, frame))
+                    else:
+                        self.queue.append((frame_time, frame))
+                    if self.max_queue_size > 0:
+                        while len(self.queue) > self.max_queue_size:
+                            self.queue.popleft()
+                    self.cond.notify()
+            counter += 1
+
+    def read_input_uri_offline(self):
+        counter = 0
+        while not self.exit_event.is_set():
+            start_time = time()
+            ret, frame = self.stream.read()
+            with self.cond:
+                if not ret:
+                    self.exit_event.set()
+                    self.cond.notify()
+                    break
+                if counter % (self.frame_skip + 1) == 0:
                     if self.preprocess:
                         frame = self.preprocess(frame)
                         if frame:
@@ -89,6 +113,10 @@ class StreamerV1(object):
                         while len(self.queue) > self.max_queue_size:
                             self.queue.popleft()
                     self.cond.notify()
+                    exec_time = time() - start_time
+                    sleep_time = (self.frame_skip + 1) / self.fps - exec_time
+                    sleep(sleep_time)
+            counter += 1
 
     def read_last(self):
         with self.cond:
@@ -112,7 +140,7 @@ class StreamerV1(object):
         frame = resize(frame, width=self.width, height=self.height)
         return True, frame
 
-    def read_frame(self):
+    def read_number_frame(self):
         with self.cond:
             while len(self.queue) == 0 and not self.exit_event.is_set():
                 self.cond.wait()
@@ -122,6 +150,17 @@ class StreamerV1(object):
             self.cond.notify()
         frame = resize(frame, width=self.width, height=self.height)
         return True, fn, frame
+
+    def read_time_frame(self):
+        with self.cond:
+            while len(self.queue) == 0 and not self.exit_event.is_set():
+                self.cond.wait()
+            if len(self.queue) == 0 and self.exit_event.is_set():
+                return False, -1, None
+            ft, frame = self.queue.popleft()
+            self.cond.notify()
+        frame = resize(frame, width=self.width, height=self.height)
+        return True, ft, frame
 
     def release(self):
         with self.cond:

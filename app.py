@@ -8,4 +8,4 @@ if __name__ == "__main__":
         cfg = yaml.safe_load(f)
     cfg = cfg[user]
     orchestrator = Orchestrator(cfg)
-    orchestrator.run()
+    orchestrator.ft_run()
