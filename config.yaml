@@ -2,6 +2,8 @@ mostafa:
 
   orchestration:
     save: False
+    frame_skip: 1
+    fps: 6
     detection: True
     recognition: True
     tracking: True
@@ -13,10 +15,10 @@ mostafa:
     topic: "SourceKafkaTopic.Source"
 
   stream:
-    # 0: rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=0.sdp?real_stream--rtp-caching=800
-    # 1: rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800
-    0: /mnt/storage/projects/Aktar/Aktar-develop/videos/home-mostafa/cam0.avi
-    1: /mnt/storage/projects/Aktar/Aktar-develop/videos/home-mostafa/cam1.avi
+    0: rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=0.sdp?real_stream--rtp-caching=800
+    1: rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800
+    # 0: /mnt/storage/projects/Aktar/Aktar-develop/videos/home-mostafa/cam0.avi
+    # 1: /mnt/storage/projects/Aktar/Aktar-develop/videos/home-mostafa/cam1.avi
 
   detection:
     weights: aktarai/detection/weights/yolov8s-pose.pt
@@ -48,6 +50,8 @@ parand-sub:
 
   orchestration:
     save: False
+    frame_skip: 3
+    fps: 6
     detection: True
     recognition: True
     tracking: True
@@ -59,10 +63,14 @@ parand-sub:
     topic: "SourceKafkaTopic.Source"
 
   stream:
-    0: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/video/cam1.avi
-    1: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/video/cam2.avi
-    2: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/video/cam3.avi
-    3: /mnt/storage/projects/Aktar/Mapping/data/parand-sub/video/cam4.avi
+    0: rtsp://it:OMENCO@it1400@192.168.50.122:554/cam/realmonitor?channel=1&subtype=0
+    1: rtsp://project:OMENCO2022@192.168.50.123:554/cam/realmonitor?channel=1&subtype=0
+    2: rtsp://project:OMENCO2022@192.168.50.124:554/cam/realmonitor?channel=1&subtype=0
+    3: rtsp://it:OMENCO@it1400@192.168.50.125:554/cam/realmonitor?channel=1&subtype=0
+    # 0: /mnt/storage/projects/Aktar/Aktar-develop/videos/parand-sub/cam0.avi
+    # 1: /mnt/storage/projects/Aktar/Aktar-develop/videos/parand-sub/cam1.avi
+    # 2: /mnt/storage/projects/Aktar/Aktar-develop/videos/parand-sub/cam2.avi
+    # 3: /mnt/storage/projects/Aktar/Aktar-develop/videos/parand-sub/cam3.avi
 
   detection:
     weights: aktarai/detection/weights/yolov8s-pose.pt
