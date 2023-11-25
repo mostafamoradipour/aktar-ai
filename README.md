@@ -1,7 +1,7 @@
 # aktarai module
 
 ### download and install
-git clone git@github.com:mostafamoradipour/Aktar.git
+`git clone git@github.com:mostafamoradipour/Aktar.git`
 
 
 ### torchvision
