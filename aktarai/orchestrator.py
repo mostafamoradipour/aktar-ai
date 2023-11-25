@@ -35,13 +35,13 @@ class Orchestrator(object):
         if "detection" in self.funcs.keys():
             if self.funcs["detection"]:
                 self.person_detector = PersonDetector(cfg["detection"])
-            else:
-                self.person_detector = DetectionDataLoader(cfg["detection"])
+            # else:
+            #     self.person_detector = DetectionDataLoader(cfg["detection"])
         if "recognition" in self.funcs.keys():
             if self.funcs["recognition"]:
                 self.body_feature_extractor = BodyFeatureExtractor(cfg["recognition"])
-            else:
-                self.body_feature_extractor = ExtractionDataLoader(cfg["recognition"])
+            # else:
+            #     self.body_feature_extractor = ExtractionDataLoader(cfg["recognition"])
         if "tracking" in self.funcs.keys():
             self.person_tracker = GTracker2(cfg["tracking"])
 
