@@ -1,5 +1,6 @@
 demo
 build
+dist
 debug
 videos
 aktarai/pose
@@ -16,3 +17,5 @@ aktarai/detrec
 *.trt
 *.onnx
 *.pickle
+*.so
+*.c
