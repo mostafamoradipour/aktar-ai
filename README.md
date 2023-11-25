@@ -42,5 +42,4 @@ pip install pycairo PyGObject
 ```
 
 ### build and distribute
-python3 setup.py build_ext --inplace
 python3 setup.py bdist_wheel
