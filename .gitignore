@@ -1,8 +1,10 @@
 demo
 build
 dist
+aktarai.egg-info
 debug
 videos
+menv
 aktarai/pose
 aktarai/detrec
 *.vscode
