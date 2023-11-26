@@ -181,10 +181,10 @@ class Orchestrator(object):
             frames = []
             for stream in self.streams:
                 # read frame from stream
-                ft = -1
-                while ft < (frame_time - 0.5 / self.fps):
-                    ret, ft, frame = stream.read_time_frame()
-                # ret, frame = stream.read_last()
+                # ft = -1
+                # while ft < (frame_time - 0.5 / self.fps):
+                #     ret, ft, frame = stream.read_time_frame()
+                ret, frame = stream.read_last()
                 if not ret:
                     break
                 frames.append(frame)
