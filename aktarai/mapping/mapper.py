@@ -52,6 +52,7 @@ class PointMapper(object):
             imagePoints, physicalPoints = imagePoints[:length], physicalPoints[:length]
             self.mapping_data[cam_id]["measurements"] = [mtx, dist, imagePoints, physicalPoints]
             self.calibrate(cam_id)
+            self.refine(cam_id)
 
     def calibrate(self, cam_id):
         mtx, dist, imagePoints, physicalPoints = self.mapping_data[cam_id]["measurements"]
@@ -136,7 +137,7 @@ class PointMapper(object):
         assert X == None or Y == None or Z == None, "problem can't be solved!!!"
         if X and Y and Z:
             return [X, Y, Z]
-        
+
         result = [None, None, None]
 
         # to remove distortion
