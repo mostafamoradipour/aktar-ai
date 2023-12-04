@@ -1,134 +1,221 @@
-response_code:
-  ok: 200
-  bad_request: 400
 
-email: mostafa.moradipoor73@gmail.com
-# email: alr.akbari@gmail.com
-# email: esi4@gmail.com
+user: home-mostafa
 
-stream:
-  mongodb:
-    host: 0.0.0.0
-    port: 27017
-    db_name: Aktar
-    username: CAM
+home-mostafa:
 
-cdm:
-  body_thresh: 0.80
-  face_thresh: 0.7
-  # intensity_thresh: 40
-  update_threshold: 0.92
-  update_ignore: 0.95
-  iou_threshold_face_person: 0.01
-  competetive_body_ratio: False
-  competetive_body_area: False
-  # competetive_body_intensity: True
-  save_with_face: False
-  competetive_face_ratio: False
-  competetive_face_area: False
-  body_detection:
-    device: 'gpu'
-    img_size: 640
-    conf_thres: 0.8
-    iou_thres: 0.4
-    min_area: 1000
-    min_ratio: 2.5
-    max_ratio: 4
-    min_intensity: 40
-    left_pad: 0
-    top_pad: 0
-    right_pad: 0
-    bottom_pad: 0
-    weights: modules/Aktar_AI/DetRec/detection/weights/crowdhuman_yolov5m.onnx
+  username: mostafa
 
-  body_extraction:
-    device: gpu
-    weights: modules/Aktar_AI/DetRec/extraction/weights/osnet_x0_25_msmt17.onnx
-    input_size: [128, 256]
+  ai:
+    orchestration:
+      save: False
+      frame_skip: 1
+      fps: 6
+      detection: True
+      recognition: True
+      tracking: True
 
-  face_detection:
-      device: 'gpu'
-      img_size: 640
-      conf_thres: 0.7
-      iou_thres: 0.2
-      min_area: 800
-      min_ratio: 1
-      max_ratio: 3
-      min_intensity: 40
-      left_pad: 0
-      top_pad: 0
-      right_pad: 0
-      bottom_pad: 0
-      weights: modules/Aktar_AI/DetRec/detection/weights/yolov5n-face.onnx
+    kafka:
+      produce: True
+      server:
+        bootstrap.servers: localhost:9092
+      topic: "SourceKafkaTopic.Source"
 
-  face_extraction:
-    device: gpu
-    weights: modules/Aktar_AI/DetRec/extraction/weights/w600k_mbf.onnx
-    input_size: [112, 112]
+    stream:
+      0: rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=0.sdp?real_stream--rtp-caching=800
+      1: rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800
 
-  mongodb:
-    host: 0.0.0.0
-    port: 27017
-    db_name: Aktar
-    username: CDM
-    queue_maxsize: 10
+    detection:
+      weights: ../aktar-automation/services/weights/model1.pt
 
-dt:
-  pose_estimation:
-    device: gpu
-    weights: modules/Aktar_AI/Pose/models/human-pose-estimation-3d.pth
+    recognition:
+      device: gpu
+      weights: ../aktar-automation/services/weights/model2.onnx
+      input_size: [128, 256]
 
-  engine:
-    pose_data: modules/Aktar_AI/DTwin/assets/pose_data.json
+    tracking:
+      mapping:
+        0:
+          calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
+          image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_img_pnts.npy
+          physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_phys_pnts.npy
+        1:
+          calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
+          image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_img_pnts.npy
+          physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_phys_pnts.npy
 
-    mapping:
-      0:
-        calibration_file: ../Mapping/data/IR-datasheet/calibration.yaml
-        image_points: ../Mapping/data/mostafa/calibration/1_img_pnts.npy
-        physical_points: ../Mapping/data/mostafa/calibration/1_phys_pnts.npy
-      1:
-        calibration_file: ../Mapping/data/IR-datasheet/calibration.yaml
-        image_points: ../Mapping/data/mostafa/calibration/2_img_pnts.npy
-        physical_points: ../Mapping/data/mostafa/calibration/2_phys_pnts.npy
+    warning_zones:
+      0: {"x1": 3.0, "z1": 3.5, "x2": 4.9, "z2": 6.35}
 
-      # 0:
-      #   calibration_file: ../Mapping/data/parand-type3/calibration.yaml
-      #   image_points: ../Mapping/data/parand/122_img_pnts.npy
-      #   physical_points: ../Mapping/data/parand/122_phys_pnts.npy
-      # 1:
-      #   calibration_file: ../Mapping/data/parand-type3/calibration.yaml
-      #   image_points: ../Mapping/data/parand/123_img_pnts.npy
-      #   physical_points: ../Mapping/data/parand/123_phys_pnts.npy
-      # 2:
-      #   calibration_file: ../Mapping/data/parand-type3/calibration.yaml
-      #   image_points: ../Mapping/data/parand/124_img_pnts.npy
-      #   physical_points: ../Mapping/data/parand/124_phys_pnts.npy
-      # 3:
-      #   calibration_file: ../Mapping/data/parand-type3/calibration.yaml
-      #   image_points: ../Mapping/data/parand/125_img_pnts.npy
-      #   physical_points: ../Mapping/data/parand/125_phys_pnts.npy
+  storage:
+    enable: True
+    quality: 15
+    width: 1280
+    height: 720
+    storage_chunk_overlap: 2
+    storage_chunk_duration: 60
+    root_dir: "/var/www/html"
+    rtsp: [
+      "rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=1.sdp?real_stream--rtp-caching=800",
+      "rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=1.sdp?real_stream--rtp-caching=800"
+    ]
 
-    warning_zone: {"x1": 2.5, "z1": 4.5, "x2": 4.8, "z2": 6.35}
-    # warning_zone: {"x1": 100, "z1": 100, "x2": 110, "z2": 110}
+  streaming:
+    signaling: False
+    use_ssl: True
+    host: 'wss://192.168.1.102:8443/ws/signal/'
+    localhost: 'ws://localhost:8000/signal/'
+    rtsp: [
+      "rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=1.sdp?real_stream--rtp-caching=800",
+      "rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=1.sdp?real_stream--rtp-caching=800"
+      ]
 
-  stream:
-    0: rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=0.sdp?real_stream--rtp-caching=800
-    1: rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800
 
-    # 0: ../Mapping/data/parand/parand_122.avi
-    # 1: ../Mapping/data/parand/parand_123.avi
-    # 2: ../Mapping/data/parand/parand_124.avi
-    # 3: ../Mapping/data/parand/parand_125.avi
+########################################################################################
 
-  demo_data: ../Mapping/data/parand/track/track_cdm_data_124_nasiri_employee.json
 
-  mongodb:
-    host: 0.0.0.0
-    port: 27017
-    db_name: Aktar
-    username: DT
+parand-sub:
 
-  kafka:
-    server:
-      bootstrap.servers: localhost:9092
-    topic: "SourceKafkaTopic.Source"
+  username: parand
+
+  ai:
+    orchestration:
+      save: False
+      frame_skip: 3
+      fps: 6
+      detection: True
+      recognition: True
+      tracking: True
+
+    kafka:
+      produce: True
+      server:
+        bootstrap.servers: localhost:9092
+      topic: "SourceKafkaTopic.Source"
+
+    stream:
+      0: rtsp://it:OMENCO@it1400@192.168.50.122:554/cam/realmonitor?channel=1&subtype=0
+      1: rtsp://project:OMENCO2022@192.168.50.123:554/cam/realmonitor?channel=1&subtype=0
+      2: rtsp://project:OMENCO2022@192.168.50.124:554/cam/realmonitor?channel=1&subtype=0
+      3: rtsp://it:OMENCO@it1400@192.168.50.125:554/cam/realmonitor?channel=1&subtype=0
+
+    detection:
+      weights: weights/model1.pt
+
+    recognition:
+      device: gpu
+      weights: weights/model2.onnx
+      input_size: [128, 256]
+
+    tracking:
+      mapping:
+        0:
+          calibration_file: calibrations/parand-type3/calibration.yaml
+          image_points: calibrations/parand-sub/calibration/122_img_pnts.npy
+          physical_points: calibrations/parand-sub/calibration/122_phys_pnts.npy
+        1:
+          calibration_file: calibrations/parand-type3/calibration.yaml
+          image_points: calibrations/parand-sub/calibration/123_img_pnts.npy
+          physical_points: calibrations/parand-sub/calibration/123_phys_pnts.npy
+        2:
+          calibration_file: calibrations/parand-type3/calibration.yaml
+          image_points: calibrations/parand-sub/calibration/124_img_pnts.npy
+          physical_points: calibrations/parand-sub/calibration/124_phys_pnts.npy
+        3:
+          calibration_file: calibrations/parand-type3/calibration.yaml
+          image_points: calibrations/parand-sub/calibration/125_img_pnts.npy
+          physical_points: calibrations/parand-sub/calibration/125_phys_pnts.npy
+
+    warning_zones:
+      0: {"x1": 3.0, "z1": 4.0, "x2": 5.3, "z2": 5.85}
+
+  storage:
+    enable: True
+    quality: 15
+    width: 1280
+    height: 720
+    storage_chunk_overlap: 2
+    storage_chunk_duration: 60
+    root_dir: "/var/www/html"
+    rtsp: [
+      "rtsp://project:OMENCO2022@192.168.50.123:554/cam/realmonitor?channel=1&subtype=1",
+      "rtsp://project:OMENCO2022@192.168.50.124:554/cam/realmonitor?channel=1&subtype=1"
+    ]
+
+  streaming:
+    signaling: False
+    use_ssl: True
+    host: 'wss://192.168.50.99:8443/ws/signal/'
+    localhost: 'ws://localhost:8000/signal/'
+    rtsp: [
+      "rtsp://project:OMENCO2022@192.168.50.123:554/cam/realmonitor?channel=1&subtype=1",
+      "rtsp://project:OMENCO2022@192.168.50.124:554/cam/realmonitor?channel=1&subtype=1"
+    ]
+
+
+########################################################################################
+
+
+home-mahmood:
+
+  username: mahmood
+
+  ai:
+    orchestration:
+      save: False
+      frame_skip: 1
+      fps: 6
+      detection: True
+      recognition: True
+      tracking: True
+
+    kafka:
+      produce: True
+      server:
+        bootstrap.servers: localhost:9092
+      topic: "SourceKafkaTopic.Source"
+
+    stream:
+      0: rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=0.sdp?real_stream--rtp-caching=800
+
+    detection:
+      weights: weights/model1.pt
+
+    recognition:
+      device: gpu
+      weights: weights/model2.onnx
+      input_size: [128, 256]
+
+    tracking:
+      mapping:
+        0:
+          calibration_file: calibrations/IR-opencv/calibration.yaml
+          image_points: calibrations/home-mostafa/calibration/1_img_pnts.npy
+          physical_points: calibrations/home-mostafa/calibration/1_phys_pnts.npy
+        1:
+          calibration_file: calibrations/IR-opencv/calibration.yaml
+          image_points: calibrations/home-mostafa/calibration/2_img_pnts.npy
+          physical_points: calibrations/home-mostafa/calibration/2_phys_pnts.npy
+
+    warning_zones:
+      0: {"x1": 3.0, "z1": 3.5, "x2": 4.9, "z2": 6.35}
+
+  storage:
+    enable: True
+    quality: 15
+    width: 1280
+    height: 720
+    storage_chunk_overlap: 2
+    storage_chunk_duration: 60
+    root_dir: "/var/www/html"
+    rtsp: [
+      "rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=1.sdp?real_stream--rtp-caching=800"
+    ]
+
+  streaming:
+    signaling: False
+    use_ssl: True
+    host: 'wss://192.168.1.102:8443/ws/signal/'
+    localhost: 'ws://localhost:8000/signal/'
+    rtsp: [
+      "rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=1.sdp?real_stream--rtp-caching=800"
+      ]

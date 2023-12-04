@@ -1,9 +1,0 @@
-# Aktar-v0.2.0
-- Bug fixed
-- Each service opens in a new window
-- Three services in Aktar: Serivce-C, Serivce-CDM, Serivce-DT
-- 4 cameras are supported for streaming (Serivce-C)
-- CDM on first camera (Service-CDM)
-- CDM database reset after each run
-- Visualize plane model (Service-DT)
-- Person detection and recognition (Aktar-AI)

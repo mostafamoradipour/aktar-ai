@@ -1,5 +1,7 @@
-PyYAML
-Flask
-flask_sock
-flask_cors
-pymongo
+tqdm==4.65.0
+confluent-kafka==2.1.1
+numpy==1.23.0
+opencv-python==4.8.0.74
+opencv-contrib-python==4.8.0.74
+scipy==1.10.1
+Cython==3.0.2

@@ -1,45 +1,32 @@
-# How to install and Run Aktar
+# aktarai module
 
-<h3>First make a new python environment and name it as you want:</h3>
+### download and install
+```
+git clone --branch main git@github.com:mostafamoradipour/Aktar.git` > aktar-ai
+cd aktar-ai
+./setup.sh
+```
 
-`python3 -m env <Your Desired Name (for example "aktar_env")>`
+### install torchvision
+```
+$ sudo apt-get install libjpeg-dev zlib1g-dev libpython3-dev libopenblas-dev libavcodec-dev libavformat-dev libswscale-dev
+$ git clone --branch <version> https://github.com/pytorch/vision torchvision   # see below for version of torchvision to download
+$ cd torchvision
+$ export BUILD_VERSION=0.x.0  # where 0.14.1 is the torchvision version  
+$ python3 setup.py install --user
+$ cd ../
+$ pip install 'pillow<7' # always needed for Python 2.7, not needed torchvision v0.5.0+ with Python 3.6
+```
+Ref: https://forums.developer.nvidia.com/t/pytorch-for-jetson/72048
 
-Then activate the Aktar's python environment as follow:
+### install gi
+```
+sudo apt install libcairo2-dev libxt-dev libgirepository1.0-dev
+pip install pycairo PyGObject
+```
 
-`source <Your Python Env Path>/bin/activate`
-
-<h3>Install the Aktar's prequirety packages in the activated environment:</h3>
-
-`pip install -r requirements.txt`
-
-<h3>Download pretrained weights of Detection and Recognition models from following links and put them in the right place:</h3>
-
-Dowload the [pretrained weights](https://drive.google.com/file/d/18oenL6tjFkdR1f5IgpYeQfDFqU4w3jEr/view?usp=sharing) of detection model and convert it to onnx using [yolov5-face](https://github.com/deepcam-cn/yolov5-face) repository, then put the onnx model in `verification/detection/weights`
-
-To covnert the pt model to onnx, in the yolov5-face repository run following command:
-
-`python3 export.py --weights /path/to/the/pt/model`
-
-Now, you can find the onnx model beside the pt model.
-
-Put the [pretrained weights](https://drive.google.com/file/d/19I-MZdctYKmVf3nu5Da3HS6KH5LBfdzG/view) of recognition model in `verification/extraction/weights` (Extract the zip file. The rocognition model is named "w600k_mbf.onnx")
-
-<h3>Then get and install Aktar-UI by running these commands:</h3>
-
-`git clone https://github.com/YasharSL/Aktar.git interface`
-
-`cd UI`
-
-`git pull`
-
-`git checkout v0.2.3`
-
-`npm install`
-
-<h3>Finally start Aktar-DB, Aktar-AI, and Aktar-UI by running this commands:</h3>
-
-`sudo docker start <mongodb container name>`
-
-`./scripts/run_ai.sh`
-
-`./scritps/run_ui.sh`
+### build and distribute
+```
+source menv/bin/activate
+python3 setup.py bdist_wheel
+```
