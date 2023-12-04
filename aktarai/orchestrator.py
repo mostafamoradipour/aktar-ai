@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from confluent_kafka import Producer
 from time import sleep
 from tqdm import tqdm
@@ -177,6 +178,7 @@ class Orchestrator(object):
         # loop over frames
         while True:
             frame_time = time()
+            current_time = datetime.now()
             # prepare frames
             frames = []
             for stream in self.streams:
@@ -200,12 +202,18 @@ class Orchestrator(object):
                 self.person_tracker.step(frames, persons, appearances)
 
             # prepare data for UI.
-            data = {"persons": [], "congestions": [],
-                    "person_current_count": 0}
+            data = {"time": current_time.isoformat(),
+                    "persons": [], "congestions": [],
+                    "heatmap": [], "person_current_count": 0}
             self.congestion_map = np.zeros((40, 40))  # current congestio map
+            heatmap = []
             for track in self.person_tracker.tracks.values():
                 if not track.confirmed:
                     continue
+
+                indices = (track.location_filter.x[:2] / 50).round()
+                heatpoint = {"point": {'x': int(indices[0]), 'z': int(indices[1])}, "value": 5}
+                heatmap.append(heatpoint)
 
                 # current congestion map update
                 self.update_congestion_map(track.location_filter.x[:2])
@@ -226,6 +234,8 @@ class Orchestrator(object):
                 person["warning"] = self.warning_check(track.location)
                 person["movement_index"] = np.linalg.norm(list(track.direction.values()))
                 data["persons"].append(person)
+
+            data["heatmap"] = heatmap
 
             # total congestion map update
             self.congestion_map[self.congestion_map < 1] = 0.0
