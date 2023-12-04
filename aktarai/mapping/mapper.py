@@ -82,7 +82,7 @@ class PointMapper(object):
                 else:
                     new_pp.append(pp)
             error /= (idx +1)
-            print(error)
+            print(f"refine error = {error}")
             if error > prev_error:
                 self.mapping_data[cam_id]["measurements"][3] = prev_pp
                 self.calibrate(cam_id)
