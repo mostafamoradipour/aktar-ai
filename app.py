@@ -8,4 +8,4 @@ if __name__ == "__main__":
     user = cfg["user"]
     cfg = cfg[user]["ai"]
     orchestrator = Orchestrator(cfg)
-    orchestrator.ft_run()
+    orchestrator.run()
