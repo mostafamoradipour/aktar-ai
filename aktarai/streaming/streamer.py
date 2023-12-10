@@ -55,7 +55,8 @@ class StreamerV1(object):
             self.stream = VideoCapture(self.gst_cap_pipeline(), CAP_GSTREAMER)
         else:
             self.stream = VideoCapture(input_uri)
-
+        ret, _ = self.stream.read()
+        assert ret, "camera/video url can't be read!"
         self.fps = self.stream.get(CAP_PROP_FPS)
 
         assert isinstance(max_queue_size, int)
@@ -66,9 +67,14 @@ class StreamerV1(object):
         self.preprocess = preprocess
         self.exit_event = Event()
         self.cond = Condition()
-        self.thread = Thread(target=self.read_input_uri, name='Streamer')
 
-    def read_input_uri(self):
+        if self.protocol == "video":
+            read_input_uri = self.read_input_uri_offline
+        else:
+            read_input_uri = self.read_input_uri_online
+        self.thread = Thread(target=read_input_uri, name='Streamer')
+
+    def read_input_uri_online(self):
         counter = 0
         while not self.exit_event.is_set():
             frame_time = time()
@@ -89,13 +95,13 @@ class StreamerV1(object):
                     if self.max_queue_size > 0:
                         while len(self.queue) > self.max_queue_size:
                             self.queue.popleft()
-                    self.cond.notify()
-            counter += 1
+                counter += 1
+                self.cond.notify()
 
     def read_input_uri_offline(self):
         counter = 0
         while not self.exit_event.is_set():
-            start_time = time()
+            frame_time = time()
             ret, frame = self.stream.read()
             with self.cond:
                 if not ret:
@@ -103,20 +109,21 @@ class StreamerV1(object):
                     self.cond.notify()
                     break
                 if counter % (self.frame_skip + 1) == 0:
+                    counter = 0
                     if self.preprocess:
                         frame = self.preprocess(frame)
                         if frame:
-                            self.queue.append((counter, frame))
+                            self.queue.append((frame_time, frame))
                     else:
-                        self.queue.append((counter, frame))
+                        self.queue.append((frame_time, frame))
                     if self.max_queue_size > 0:
                         while len(self.queue) > self.max_queue_size:
                             self.queue.popleft()
-                    self.cond.notify()
-                    exec_time = time() - start_time
-                    sleep_time = (self.frame_skip + 1) / self.fps - exec_time
-                    sleep(sleep_time)
-            counter += 1
+                exec_time = time() - frame_time
+                sleep_time = 1 / self.fps - exec_time
+                sleep(sleep_time)
+                counter += 1
+                self.cond.notify()
 
     def read_last(self):
         with self.cond:
@@ -124,7 +131,7 @@ class StreamerV1(object):
                 self.cond.wait()
             if len(self.queue) == 0 and self.exit_event.is_set():
                 return False, None
-            fn, frame = self.queue.pop()
+            _, frame = self.queue.pop()
             self.cond.notify()
         frame = resize(frame, width=self.width, height=self.height)
         return True, frame
@@ -135,21 +142,10 @@ class StreamerV1(object):
                 self.cond.wait()
             if len(self.queue) == 0 and self.exit_event.is_set():
                 return False, None
-            fn, frame = self.queue.popleft()
+            _, frame = self.queue.popleft()
             self.cond.notify()
         frame = resize(frame, width=self.width, height=self.height)
         return True, frame
-
-    def read_number_frame(self):
-        with self.cond:
-            while len(self.queue) == 0 and not self.exit_event.is_set():
-                self.cond.wait()
-            if len(self.queue) == 0 and self.exit_event.is_set():
-                return False, -1, None
-            fn, frame = self.queue.popleft()
-            self.cond.notify()
-        frame = resize(frame, width=self.width, height=self.height)
-        return True, fn, frame
 
     def read_time_frame(self):
         with self.cond:
