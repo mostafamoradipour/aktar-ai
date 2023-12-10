@@ -10,7 +10,7 @@ from aktarai.mapping import PointMapper
 from .gtrack import GTrack
 
 
-class GTracker2():
+class GTracker3():
     def __init__(self, cfg):
         self.mapper = PointMapper(cfg['mapping'])
         self.tracks = {}
@@ -42,9 +42,6 @@ class GTracker2():
             if not len(cam_persons):
                 continue
 
-            # poses = np.array([person['kpts'] for person in cam_persons])
-            # confs = np.array([person['cnfs'] for person in cam_persons])
-            # boxes = np.array([person['box'] for person in cam_persons])
             poses = cam_persons["keypoints"]
             confs = cam_persons['confs']
             boxes = cam_persons['boxes']
