@@ -9,6 +9,7 @@ from aktarai.recognition import BodyFeatureExtractor
 from aktarai.detection import PersonDetector
 from aktarai.streaming import StreamerV1
 from aktarai.tracking import GTracker2
+# from aktarai.tracking import GTracker3
 
 
 random.seed(0)
@@ -25,9 +26,10 @@ class Orchestrator(object):
         self.frame_skip = cfg["orchestration"]["frame_skip"]
         self.fps = cfg["orchestration"]["fps"]
         self.funcs = cfg["orchestration"]
-        self.warning_zones = cfg['warning_zones']
-        self.total_congestion_map = np.zeros((40, 40))
-        self.list_of_colors = ["%06x" % random.randint(0, 0xFFFFFF) for _ in range(1000)]
+        self.warning_zones = cfg["warning_zones"]
+        self.heatmap_size = cfg["heatmap_size"]
+        self.total_congestion_map = np.zeros(( cfg["heatmap_size"]['x'],  cfg["heatmap_size"]['z']))
+        self.list_of_colors = ["%06x" % random.randint(0, 0xFFFFFF) for _ in range(10000)]
 
         # prepare models
         if "detection" in self.funcs.keys():
@@ -92,16 +94,18 @@ class Orchestrator(object):
             # prepare data for UI.
             data = {"time": current_time.isoformat(),
                     "persons": [], "congestions": [],
-                    "heatmap": [], "person_current_count": 0}
-            self.congestion_map = np.zeros((40, 40))  # current congestio map
-            heatmap = []
+                    "heatmap": {"size": {'x': self.heatmap_size['x'], 'z': self.heatmap_size['z']}},
+                    "person_current_count": 0}
+            heatmap_points = []
+            self.congestion_map = np.zeros((self.heatmap_size['x'], self.heatmap_size['z']))  # current congestio map
             for track in self.person_tracker.tracks.values():
                 if not track.confirmed:
                     continue
 
                 indices = (track.location_filter.x[:2] / 50).round()
-                heatpoint = {"point": {'x': int(indices[0]), 'z': int(indices[1])}, "value": 5}
-                heatmap.append(heatpoint)
+                max_x, max_z = self.heatmap_size['x'] - 1, self.heatmap_size['z'] - 1
+                heatpoint = {"point": {'x': int(indices[0].clip(0, max_x)), 'z': int(indices[1].clip(0, max_z))}, "value": 5}
+                heatmap_points.append(heatpoint)
 
                 # current congestion map update
                 self.update_congestion_map(track.location_filter.x[:2])
@@ -123,7 +127,7 @@ class Orchestrator(object):
                 person["movement_index"] = np.linalg.norm(list(track.direction.values()))
                 data["persons"].append(person)
 
-            data["heatmap"] = heatmap
+            data["heatmap"]["points"] = heatmap_points
 
             # total congestion map update
             self.congestion_map[self.congestion_map < 1] = 0.0
@@ -178,23 +182,24 @@ class Orchestrator(object):
         '''
             This method updates the current congestion map with one location.
         '''
-        x, z = location // 50
-        x, z = int(x), int(z)
+        max_x, max_z = self.heatmap_size['x'] - 1, self.heatmap_size['z'] - 1
+        indices = (location / 50).round()
+        x, z = int(indices[0].clip(0, max_x)), int(indices[1].clip(0, max_z))
         self.congestion_map[x, z] += 0.5
-        if z > 0 and x > 0:
+        if x > 0 and z > 0:
             self.congestion_map[x - 1, z - 1] += 0.5
             self.congestion_map[x - 1, z] += 0.5
             self.congestion_map[x, z - 1] += 0.5
-        elif z <= 0:
+        elif z > 0:
             self.congestion_map[x - 1, z] += 0.5
-        elif x <= 0:
+        elif z > 0:
             self.congestion_map[x, z - 1] += 0.5
 
-        if z < 9 and x < 9:
+        if x < max_x and z < max_z:
             self.congestion_map[x + 1, z + 1] += 0.5
             self.congestion_map[x + 1, z] += 0.5
             self.congestion_map[x, z + 1] += 0.5
-        elif z >= 9:
+        elif x < max_x:
             self.congestion_map[x + 1, z] += 0.5
-        elif x >= 9:
+        elif z < max_z:
             self.congestion_map[x, z + 1] += 0.5
