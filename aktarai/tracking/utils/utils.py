@@ -168,6 +168,45 @@ def match_by_location(locs, loc):
     return -1
 
 
+def get_bodies_data(image, boxes, poses, confs):
+    if not len(boxes):
+        return None, None
+    # extract bodies
+    bodies = [image[y1: y2, x1: x2, :] for (x1, y1, x2, y2) in boxes]
+    hsv_img = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+    # ar: area, as: aspect ratio
+    bodies_ar_as = np.array([((y2 - y1) * (x2 - x1), (y2 - y1) / (x2 - x1)) for (x1, y1, x2, y2) in boxes])
+    bodies_ar, bodies_as = bodies_ar_as[:, 0:1], bodies_ar_as[:, 1:]
+    # in: intensity
+    bodies_in = np.array([[hsv_img[y1: y2, x1: x2, 2].sum()] for (x1, y1, x2, y2) in boxes]) / bodies_ar
+    bodies_scores = np.concatenate((bodies_in, bodies_ar, bodies_as), axis=1)
+    return bodies, bodies_scores
+
+
+def simplify_pose(pose, conf):
+    """
+    This method extracts neck, hip, and ankle points
+    """
+    neck = ((pose[5] + pose[6]) / 2).tolist() if (conf[5] > 0.5 and conf[6] > 0.5) else None
+    hip = ((pose[11] + pose[12]) / 2).tolist() if (conf[11] > 0.8 and conf[12] > 0.8) else None
+    ankle = ((pose[15] + pose[16]) / 2).tolist() if (conf[15] > 0.7 and conf[16] > 0.7) else None
+    if ankle and hip:
+        ankle[1] = ankle[1] + (ankle[1] - hip[1]) / 7.0
+    return (neck, hip, ankle)
+
+
+def get_posture(simplified_pose):
+    neck, hip, ankle = simplified_pose
+    posture = None
+    if hip and ankle:
+        hip_ankle_slope = abs((ankle[1] - hip[1]) / (ankle[0] - hip[0] + 1e-9))
+        if hip_ankle_slope < 0.5:
+            posture = "fall"
+        elif hip_ankle_slope > 4: 
+            posture = "stand"
+    return posture
+
+
 def get_bodies1(image, boxes, poses):
     if not len(boxes):
         return None, None
