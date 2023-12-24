@@ -3,10 +3,13 @@
 ### Added
 - Added heatmap to the orchestrator result
 ### Changed
-- orchestrator
+- orchestrator module
 ## 0.1.1
 ### Added
 - Added heatmap size to the config file
 ## 0.1.2
 ### Changed
-- congestion map function in orchestrator module
+- Congestion map function in orchestrator module
+## 0.1.3
+### Changed
+- Number of supporting ids from 1000 to 10000
