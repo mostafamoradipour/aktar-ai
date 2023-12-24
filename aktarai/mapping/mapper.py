@@ -38,21 +38,24 @@ class PointMapper(object):
         self.mapping_data = {}
         self.num_of_cams = len(cfg.keys())
         for cam_id in cfg.keys():
-            self.mapping_data[cam_id] = {}
             config = cfg[cam_id]
-            with open(config['calibration_file']) as f:
-                loadeddict = yaml.safe_load(f)
-            mtx = loadeddict.get('camera_matrix')
-            dist = loadeddict.get('dist_coeff')
-            mtx = np.array(mtx)
-            dist = np.array(dist)
-            imagePoints = np.load(config['image_points']).astype('float32')
-            physicalPoints = np.load(config['physical_points']).astype('float32')
-            length = min(len(imagePoints), len(physicalPoints))
-            imagePoints, physicalPoints = imagePoints[:length], physicalPoints[:length]
-            self.mapping_data[cam_id]["measurements"] = [mtx, dist, imagePoints, physicalPoints]
-            self.calibrate(cam_id)
-            self.refine(cam_id)
+            if config:
+                self.mapping_data[cam_id] = {}
+                with open(config['calibration_file']) as f:
+                    loadeddict = yaml.safe_load(f)
+                mtx = loadeddict.get('camera_matrix')
+                dist = loadeddict.get('dist_coeff')
+                mtx = np.array(mtx)
+                dist = np.array(dist)
+                imagePoints = np.load(config['image_points']).astype('float32')
+                physicalPoints = np.load(config['physical_points']).astype('float32')
+                length = min(len(imagePoints), len(physicalPoints))
+                imagePoints, physicalPoints = imagePoints[:length], physicalPoints[:length]
+                self.mapping_data[cam_id]["measurements"] = [mtx, dist, imagePoints, physicalPoints]
+                self.calibrate(cam_id)
+                self.refine(cam_id)
+            else:
+                self.mapping_data[cam_id] = None
 
     def calibrate(self, cam_id):
         mtx, dist, imagePoints, physicalPoints = self.mapping_data[cam_id]["measurements"]
