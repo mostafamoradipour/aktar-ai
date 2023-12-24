@@ -1,11 +1,6 @@
-from copy import deepcopy
-from time import time
 import numpy as np
-import base64
-import json
-import cv2
 
-from .utils import euclidean_squared_distance, linear_assignment, get_bodies1, feature_euclidean_squared_distance, feature_cosine_distance
+from .utils import euclidean_squared_distance, linear_assignment, get_bodies1, feature_cosine_distance
 from aktarai.mapping import PointMapper
 from .gtrack import GTrack
 
@@ -15,7 +10,7 @@ class GTracker2():
         self.mapper = PointMapper(cfg['mapping'])
         self.tracks = {}
         self.deactive_tracks = {}
-        self.list_of_ids = list(range(1000, 0, -1))
+        self.list_of_ids = list(range(10000, 0, -1))
         self.msr_inf_loc_cost = 10000
         self.trk_inf_loc_cost = 10000
         self.trk_inf_feat_cost = 0.1
