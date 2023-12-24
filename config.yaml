@@ -46,6 +46,8 @@ home-mostafa:
     warning_zones:
       0: {"x1": 3.0, "z1": 3.5, "x2": 4.9, "z2": 6.35}
 
+    heatmap_size: {"x": 10, "z": 13}
+
   storage:
     enable: True
     quality: 15
