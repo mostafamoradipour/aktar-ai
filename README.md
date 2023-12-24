@@ -28,5 +28,5 @@ pip install pycairo PyGObject
 ### build and distribute
 ```
 source menv/bin/activate
-python3 setup.py bdist_wheel
+python setup.py bdist_wheel
 ```
