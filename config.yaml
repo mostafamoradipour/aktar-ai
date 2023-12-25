@@ -1,5 +1,109 @@
 
-user: home-mostafa
+user: test
+
+test:
+
+  username: mostafa
+
+  ai:
+    orchestration:
+      save: False
+      frame_skip: 1
+      fps: 6
+      detection: True
+      recognition: True
+      tracking: True
+
+    kafka:
+      produce: True
+      server:
+        bootstrap.servers: localhost:9092
+      topic: "SourceKafkaTopic.Source"
+
+    stream:
+      0: rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=0.sdp?real_stream--rtp-caching=800
+      1: rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800
+      2: rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=0.sdp?real_stream--rtp-caching=800
+      3: rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800
+      4: rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=0.sdp?real_stream--rtp-caching=800
+      5: rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800
+      6: rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=0.sdp?real_stream--rtp-caching=800
+      7: rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=0.sdp?real_stream--rtp-caching=800
+
+    detection:
+      weights: ../aktar-automation/services/weights/model1.pt
+
+    recognition:
+      device: gpu
+      weights: ../aktar-automation/services/weights/model2.onnx
+      input_size: [128, 256]
+
+    tracking:
+      mapping:
+        0:
+          calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
+          image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_img_pnts.npy
+          physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_phys_pnts.npy
+        1:
+          calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
+          image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_img_pnts.npy
+          physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_phys_pnts.npy
+        2:
+          calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
+          image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_img_pnts.npy
+          physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_phys_pnts.npy
+        3:
+          calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
+          image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_img_pnts.npy
+          physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_phys_pnts.npy
+        4:
+          calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
+          image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_img_pnts.npy
+          physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_phys_pnts.npy
+        5:
+          calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
+          image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_img_pnts.npy
+          physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_phys_pnts.npy
+        6:
+          calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
+          image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_img_pnts.npy
+          physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_phys_pnts.npy
+        7:
+          calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
+          image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_img_pnts.npy
+          physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_phys_pnts.npy
+  
+    warning_zones:
+      0: {"x1": 3.0, "z1": 3.5, "x2": 4.9, "z2": 6.35}
+
+    heatmap_size: {"x": 10, "z": 13}
+
+  storage:
+    enable: True
+    quality: 15
+    width: 1280
+    height: 720
+    storage_chunk_overlap: 2
+    storage_chunk_duration: 60
+    root_dir: "/var/www/html"
+    rtsp: [
+      "rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=1.sdp?real_stream--rtp-caching=800",
+      "rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=1.sdp?real_stream--rtp-caching=800"
+    ]
+
+  streaming:
+    signaling: False
+    use_ssl: True
+    host: 'wss://192.168.1.102:8443/ws/signal/'
+    localhost: 'ws://localhost:8000/signal/'
+    rtsp: [
+      "rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=1.sdp?real_stream--rtp-caching=800",
+      "rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=1.sdp?real_stream--rtp-caching=800"
+      ]
+
+
+########################################################################################
+
 
 home-mostafa:
 
