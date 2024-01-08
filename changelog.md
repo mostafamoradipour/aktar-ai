@@ -13,3 +13,7 @@
 ## 0.1.3
 ### Changed
 - Number of supporting ids from 1000 to 10000
+## 0.2.0
+### Added
+- Tracking with and without location (mapping is optional)
+
