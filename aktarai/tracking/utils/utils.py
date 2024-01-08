@@ -6,6 +6,7 @@ import cv2
 
 
 INF_COST = 100 
+MAX_BODY_SCORS = [200.0, 100000, 4.0]
 
 
 def get_box_from_pose(pose):
@@ -168,9 +169,24 @@ def match_by_location(locs, loc):
     return -1
 
 
+def is_a_good_body(scores):
+    intensity, area, aspect_ratio = scores
+    if intensity < 50.0 or intensity > MAX_BODY_SCORS[0]:
+        return False
+    if area < 5000 or area > MAX_BODY_SCORS[1]:
+        return False
+    if aspect_ratio < 1.7 or aspect_ratio > MAX_BODY_SCORS[2]:
+        return False
+    return True
+
+
 def get_bodies_data(image, boxes, poses, confs):
     if not len(boxes):
-        return None, None
+        return None, None, None, None
+    # simplify poses
+    simp_poses = [simplify_pose(pose, conf) for pose, conf in zip(poses, confs)]
+    # extract posture
+    bodies_posture = [get_posture(simp_pose) for simp_pose in simp_poses]
     # extract bodies
     bodies = [image[y1: y2, x1: x2, :] for (x1, y1, x2, y2) in boxes]
     hsv_img = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
@@ -180,7 +196,7 @@ def get_bodies_data(image, boxes, poses, confs):
     # in: intensity
     bodies_in = np.array([[hsv_img[y1: y2, x1: x2, 2].sum()] for (x1, y1, x2, y2) in boxes]) / bodies_ar
     bodies_scores = np.concatenate((bodies_in, bodies_ar, bodies_as), axis=1)
-    return bodies, bodies_scores
+    return bodies, bodies_scores, simp_poses, bodies_posture
 
 
 def simplify_pose(pose, conf):
