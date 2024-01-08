@@ -1,5 +1,5 @@
 
-user: test
+user: home-mostafa
 
 test:
 
@@ -78,29 +78,6 @@ test:
 
     heatmap_size: {"x": 10, "z": 13}
 
-  storage:
-    enable: True
-    quality: 15
-    width: 1280
-    height: 720
-    storage_chunk_overlap: 2
-    storage_chunk_duration: 60
-    root_dir: "/var/www/html"
-    rtsp: [
-      "rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=1.sdp?real_stream--rtp-caching=800",
-      "rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=1.sdp?real_stream--rtp-caching=800"
-    ]
-
-  streaming:
-    signaling: False
-    use_ssl: True
-    host: 'wss://192.168.1.102:8443/ws/signal/'
-    localhost: 'ws://localhost:8000/signal/'
-    rtsp: [
-      "rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=1.sdp?real_stream--rtp-caching=800",
-      "rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=1.sdp?real_stream--rtp-caching=800"
-      ]
-
 
 ########################################################################################
 
@@ -139,189 +116,15 @@ home-mostafa:
     tracking:
       mapping:
         0:
-          calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
-          image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_img_pnts.npy
-          physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_phys_pnts.npy
+          # calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
+          # image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_img_pnts.npy
+          # physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_phys_pnts.npy
         1:
-          calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
-          image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_img_pnts.npy
-          physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_phys_pnts.npy
+          # calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
+          # image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_img_pnts.npy
+          # physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_phys_pnts.npy
 
     warning_zones:
       0: {"x1": 3.0, "z1": 3.5, "x2": 4.9, "z2": 6.35}
 
     heatmap_size: {"x": 10, "z": 13}
-
-  storage:
-    enable: True
-    quality: 15
-    width: 1280
-    height: 720
-    storage_chunk_overlap: 2
-    storage_chunk_duration: 60
-    root_dir: "/var/www/html"
-    rtsp: [
-      "rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=1.sdp?real_stream--rtp-caching=800",
-      "rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=1.sdp?real_stream--rtp-caching=800"
-    ]
-
-  streaming:
-    signaling: False
-    use_ssl: True
-    host: 'wss://192.168.1.102:8443/ws/signal/'
-    localhost: 'ws://localhost:8000/signal/'
-    rtsp: [
-      "rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=1.sdp?real_stream--rtp-caching=800",
-      "rtsp://192.168.1.103:554/user=admin&password=&channel=2&stream=1.sdp?real_stream--rtp-caching=800"
-      ]
-
-
-########################################################################################
-
-
-parand-sub:
-
-  username: parand
-
-  ai:
-    orchestration:
-      save: False
-      frame_skip: 3
-      fps: 6
-      detection: True
-      recognition: True
-      tracking: True
-
-    kafka:
-      produce: True
-      server:
-        bootstrap.servers: localhost:9092
-      topic: "SourceKafkaTopic.Source"
-
-    stream:
-      0: rtsp://it:OMENCO@it1400@192.168.50.122:554/cam/realmonitor?channel=1&subtype=0
-      1: rtsp://project:OMENCO2022@192.168.50.123:554/cam/realmonitor?channel=1&subtype=0
-      2: rtsp://project:OMENCO2022@192.168.50.124:554/cam/realmonitor?channel=1&subtype=0
-      3: rtsp://it:OMENCO@it1400@192.168.50.125:554/cam/realmonitor?channel=1&subtype=0
-
-    detection:
-      weights: weights/model1.pt
-
-    recognition:
-      device: gpu
-      weights: weights/model2.onnx
-      input_size: [128, 256]
-
-    tracking:
-      mapping:
-        0:
-          calibration_file: calibrations/parand-type3/calibration.yaml
-          image_points: calibrations/parand-sub/calibration/122_img_pnts.npy
-          physical_points: calibrations/parand-sub/calibration/122_phys_pnts.npy
-        1:
-          calibration_file: calibrations/parand-type3/calibration.yaml
-          image_points: calibrations/parand-sub/calibration/123_img_pnts.npy
-          physical_points: calibrations/parand-sub/calibration/123_phys_pnts.npy
-        2:
-          calibration_file: calibrations/parand-type3/calibration.yaml
-          image_points: calibrations/parand-sub/calibration/124_img_pnts.npy
-          physical_points: calibrations/parand-sub/calibration/124_phys_pnts.npy
-        3:
-          calibration_file: calibrations/parand-type3/calibration.yaml
-          image_points: calibrations/parand-sub/calibration/125_img_pnts.npy
-          physical_points: calibrations/parand-sub/calibration/125_phys_pnts.npy
-
-    warning_zones:
-      0: {"x1": 3.0, "z1": 4.0, "x2": 5.3, "z2": 5.85}
-
-  storage:
-    enable: True
-    quality: 15
-    width: 1280
-    height: 720
-    storage_chunk_overlap: 2
-    storage_chunk_duration: 60
-    root_dir: "/var/www/html"
-    rtsp: [
-      "rtsp://project:OMENCO2022@192.168.50.123:554/cam/realmonitor?channel=1&subtype=1",
-      "rtsp://project:OMENCO2022@192.168.50.124:554/cam/realmonitor?channel=1&subtype=1"
-    ]
-
-  streaming:
-    signaling: False
-    use_ssl: True
-    host: 'wss://192.168.50.99:8443/ws/signal/'
-    localhost: 'ws://localhost:8000/signal/'
-    rtsp: [
-      "rtsp://project:OMENCO2022@192.168.50.123:554/cam/realmonitor?channel=1&subtype=1",
-      "rtsp://project:OMENCO2022@192.168.50.124:554/cam/realmonitor?channel=1&subtype=1"
-    ]
-
-
-########################################################################################
-
-
-home-mahmood:
-
-  username: mahmood
-
-  ai:
-    orchestration:
-      save: False
-      frame_skip: 1
-      fps: 6
-      detection: True
-      recognition: True
-      tracking: True
-
-    kafka:
-      produce: True
-      server:
-        bootstrap.servers: localhost:9092
-      topic: "SourceKafkaTopic.Source"
-
-    stream:
-      0: rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=0.sdp?real_stream--rtp-caching=800
-
-    detection:
-      weights: weights/model1.pt
-
-    recognition:
-      device: gpu
-      weights: weights/model2.onnx
-      input_size: [128, 256]
-
-    tracking:
-      mapping:
-        0:
-          calibration_file: calibrations/IR-opencv/calibration.yaml
-          image_points: calibrations/home-mostafa/calibration/1_img_pnts.npy
-          physical_points: calibrations/home-mostafa/calibration/1_phys_pnts.npy
-        1:
-          calibration_file: calibrations/IR-opencv/calibration.yaml
-          image_points: calibrations/home-mostafa/calibration/2_img_pnts.npy
-          physical_points: calibrations/home-mostafa/calibration/2_phys_pnts.npy
-
-    warning_zones:
-      0: {"x1": 3.0, "z1": 3.5, "x2": 4.9, "z2": 6.35}
-
-  storage:
-    enable: True
-    quality: 15
-    width: 1280
-    height: 720
-    storage_chunk_overlap: 2
-    storage_chunk_duration: 60
-    root_dir: "/var/www/html"
-    rtsp: [
-      "rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=1.sdp?real_stream--rtp-caching=800"
-    ]
-
-  streaming:
-    signaling: False
-    use_ssl: True
-    host: 'wss://192.168.1.102:8443/ws/signal/'
-    localhost: 'ws://localhost:8000/signal/'
-    rtsp: [
-      "rtsp://192.168.1.103:554/user=admin&password=&channel=1&stream=1.sdp?real_stream--rtp-caching=800"
-      ]
