@@ -8,8 +8,7 @@ import json
 from aktarai.recognition import BodyFeatureExtractor
 from aktarai.detection import PersonDetector
 from aktarai.streaming import StreamerV1
-from aktarai.tracking import GTracker2
-# from aktarai.tracking import GTracker3
+from aktarai.tracking import GTracker
 
 
 random.seed(0)
@@ -43,7 +42,7 @@ class Orchestrator(object):
             # else:
             #     self.body_feature_extractor = ExtractionDataLoader(cfg["recognition"])
         if "tracking" in self.funcs.keys():
-            self.person_tracker = GTracker2(cfg["tracking"])
+            self.person_tracker = GTracker(cfg["tracking"])
 
         # prepare streams
         self.streams = []
