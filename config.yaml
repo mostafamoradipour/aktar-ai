@@ -116,13 +116,13 @@ home-mostafa:
     tracking:
       mapping:
         0:
-          # calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
-          # image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_img_pnts.npy
-          # physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_phys_pnts.npy
+          calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
+          image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_img_pnts.npy
+          physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/1_phys_pnts.npy
         1:
-          # calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
-          # image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_img_pnts.npy
-          # physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_phys_pnts.npy
+          calibration_file: ../aktar-automation/services/calibrations/IR-opencv/calibration.yaml
+          image_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_img_pnts.npy
+          physical_points: ../aktar-automation/services/calibrations/home-mostafa/calibration/2_phys_pnts.npy
 
     warning_zones:
       0: {"x1": 3.0, "z1": 3.5, "x2": 4.9, "z2": 6.35}
