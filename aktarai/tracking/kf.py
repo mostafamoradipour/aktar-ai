@@ -6,7 +6,7 @@ class StaticKF(object):
         if init_height:
             self.x = init_height
         else:
-            self.x = 180.
+            self.x = 150.
         self.iter = 1 
 
     def update(self, ms_height):
