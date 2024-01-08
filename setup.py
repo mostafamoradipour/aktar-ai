@@ -52,6 +52,6 @@ for name, data in ext_data.items():
 # Use cythonize on the extension object.
 setup(
     name='aktarai',
-    version='0.1.3',
+    version='0.2.0',
     author='Mostafa Moradipour',
     ext_modules=cythonize(extensions))
