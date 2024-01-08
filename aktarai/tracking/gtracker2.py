@@ -5,7 +5,7 @@ from aktarai.mapping import PointMapper
 from .gtrack import GTrack
 
 
-class GTracker2():
+class GTracker():
     def __init__(self, cfg):
         self.mapper = PointMapper(cfg['mapping'])
         self.tracks = {}
@@ -16,6 +16,8 @@ class GTracker2():
         self.trk_inf_feat_cost = 0.1
 
     def step(self, frames, detections, recognitions):
+        # TODO: Add per camera matching -> this can cancel the location differences from different cameras for one person.
+
         # Start from a camera with more persons
         cam_id_list = sorted(range(self.mapper.num_of_cams), key=lambda index: len(detections[index]["boxes"]), reverse=True)
 
@@ -113,8 +115,6 @@ class GTracker2():
         # ----- # # -------------------------- #
         trk_ids = list(self.tracks.keys())
         msr_ids = list(global_msr_info.keys())
-
-        # TODO: Add per camera matching -> this can cancel the location differences from different cameras for one person.
 
         if not len(msr_ids):
             loc_matched_ids, u_trk_ids, u_msr_ids = [], trk_ids, []
