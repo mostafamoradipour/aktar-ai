@@ -16,4 +16,8 @@
 ## 0.2.0
 ### Added
 - Tracking with and without location (mapping is optional)
+## 0.2.1
+### Changed
+- Tracking algorithm to better track when a quick disappearing occurs
+
 
