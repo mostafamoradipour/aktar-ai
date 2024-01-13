@@ -35,15 +35,12 @@ class GTracker():
         for cam_id in cam_id_list:
             local_msr_info = {}
              # extract cam measurements
-            cam_persons = detections[cam_id]
+            cam_persons_detection = detections[cam_id]
             cam_persons_feature = recognitions[cam_id]
 
-            if not len(cam_persons):
-                continue
-
-            poses = cam_persons["keypoints"]
-            confs = cam_persons['confs']
-            boxes = cam_persons['boxes']
+            poses = cam_persons_detection["keypoints"]
+            confs = cam_persons_detection['confs']
+            boxes = cam_persons_detection['boxes']
 
             bodies, bodies_scores, simp_poses, bodies_posture = get_bodies_data(frames[cam_id].copy(), boxes, poses, confs)
 
@@ -158,6 +155,12 @@ class GTracker():
         else:
             loc_matches, u_trk_loc_ids, u_msr_loc_ids = [], trk_loc_ids, msr_loc_ids
 
+        for trk_id, msr_id in loc_matches:
+            if trk_id in trk_feat_ids:
+                trk_feat_ids.remove(trk_id)
+            if msr_id in msr_feat_ids:
+                msr_feat_ids.remove(msr_id)
+
         if len(trk_feat_ids) and len(msr_feat_ids):
             # compute cost
             trk_feats = np.array([np.array(self.tracks[_id].features).mean(0) for _id in trk_feat_ids])
@@ -168,7 +171,7 @@ class GTracker():
         else:
             feat_matches, u_trk_feat_ids, u_msr_feat_ids = [], trk_feat_ids, msr_feat_ids
 
-        matches = list(set(loc_matches + feat_matches))
+        matches = loc_matches + feat_matches
         u_trk_ids = list(set(u_trk_loc_ids + u_trk_feat_ids))
         u_msr_ids = list(set(u_msr_loc_ids + u_msr_feat_ids))
 
@@ -207,9 +210,11 @@ class GTracker():
             # activate deactive tracks
             for uc_trk_id, d_trk_id in matched_ids:
                 self.tracks[d_trk_id] = self.tracks.pop(uc_trk_id)
+                self.list_of_ids.append(uc_trk_id)
                 d_track = self.deactive_tracks.pop(d_trk_id)
                 self.tracks[d_trk_id].id = d_track.id
                 self.tracks[d_trk_id].age += d_track.age
+                self.tracks[d_trk_id].features.extend(d_track.features)
   
         # kalman predict
         for trk_id in list(self.tracks.keys()):
