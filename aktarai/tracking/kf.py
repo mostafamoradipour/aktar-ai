@@ -20,7 +20,7 @@ class StaticKF(object):
 class DynamicKF(object):
     def __init__(self,
                  init_location=None,
-                 dt=0.2,
+                 dt=0.13,
                  u_x=1.,
                  u_y=1.,
                  std_acc=1.,

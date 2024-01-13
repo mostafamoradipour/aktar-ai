@@ -90,7 +90,7 @@ home-mostafa:
     orchestration:
       save: False
       frame_skip: 1
-      fps: 6
+      fps: 8
       detection: True
       recognition: True
       tracking: True
