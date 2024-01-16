@@ -2,6 +2,7 @@ from confluent_kafka import Producer
 from datetime import datetime
 from time import time, sleep
 import numpy as np
+import logging
 import random
 import json
 
@@ -12,6 +13,7 @@ from aktarai.tracking import GTracker
 
 
 random.seed(0)
+logging.basicConfig(filename='app.log', filemode='w', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 class Orchestrator(object):
@@ -70,100 +72,104 @@ class Orchestrator(object):
 
         # loop over frames
         while True:
-            frame_time = time()
-            current_time = datetime.now()
-            # prepare frames
-            frames = []
-            for stream in self.streams:
-                ret, frame = stream.read_last()
-                if not ret:
-                    break
-                frames.append(frame)
-            if not ret:
-                break
+            try:
+                frame_time = time()
+                current_time = datetime.now()
+                # prepare frames
+                frames = []
+                for stream in self.streams:
+                    ret, frame = stream.read_last()
+                    # if not ret:
+                    #     break
+                    frames.append(frame)
+                # if not ret:
+                #     break
 
-            # inference models
-            if "detection" in self.funcs.keys():
-                persons = self.person_detector(frames)
-            if "recognition" in self.funcs.keys():
-                appearances = self.body_feature_extractor(frames, persons)
-            if "tracking" in self.funcs.keys():
-                self.person_tracker.step(frames, persons, appearances)
+                # inference models
+                if "detection" in self.funcs.keys():
+                    persons = self.person_detector(frames)
+                if "recognition" in self.funcs.keys():
+                    appearances = self.body_feature_extractor(frames, persons)
+                if "tracking" in self.funcs.keys():
+                    self.person_tracker.step(frames, persons, appearances)
 
-            # prepare data for UI.
-            data = {"time": current_time.isoformat(),
-                    "persons": [], "congestions": [],
-                    "heatmap": {"size": {'x': self.heatmap_size['x'], 'z': self.heatmap_size['z']}},
-                    "person_current_count": 0}
-            heatmap_points = []
-            self.congestion_map = np.zeros((self.heatmap_size['x'], self.heatmap_size['z']))  # current congestio map
-            for track in self.person_tracker.tracks.values():
-                if not track.confirmed:
-                    continue
+                # prepare data for UI.
+                data = {"time": current_time.isoformat(),
+                        "persons": [], "congestions": [],
+                        "heatmap": {"size": {'x': self.heatmap_size['x'], 'z': self.heatmap_size['z']}},
+                        "person_current_count": 0}
+                heatmap_points = []
+                self.congestion_map = np.zeros((self.heatmap_size['x'], self.heatmap_size['z']))  # current congestio map
+                for track in self.person_tracker.tracks.values():
+                    if not track.confirmed:
+                        continue
 
-                indices = (track.location_filter.x[:2] / 50).round()
-                max_x, max_z = self.heatmap_size['x'] - 1, self.heatmap_size['z'] - 1
-                heatpoint = {"point": {'x': int(indices[0].clip(0, max_x)), 'z': int(indices[1].clip(0, max_z))}, "value": 5}
-                heatmap_points.append(heatpoint)
+                    indices = (track.location_filter.x[:2] / 50).round()
+                    max_x, max_z = self.heatmap_size['x'] - 1, self.heatmap_size['z'] - 1
+                    heatpoint = {"point": {'x': int(indices[0].clip(0, max_x)), 'z': int(indices[1].clip(0, max_z))}, "value": 5}
+                    heatmap_points.append(heatpoint)
 
-                # current congestion map update
-                self.update_congestion_map(track.location_filter.x[:2])
+                    # current congestion map update
+                    self.update_congestion_map(track.location_filter.x[:2])
 
-                # add confirmed persons to data
-                data["person_current_count"] += 1
-                person = {}
-                person["id"] = track.id
-                person["color"] = self.list_of_colors[track.id]
-                person["best_bodies"] = track.good_bodies.popleft() if len(track.good_bodies) else []
-                person["best_faces"] = []
-                person["isFallen"] = track.isFallen
-                person["isWalking"] = track.isWalking
-                person["joints"] = []
-                person["location"] = track.location
-                person["direction"] = track.direction
-                person["height"] = track.height
-                person["warning"] = self.warning_check(track.location)
-                person["movement_index"] = np.linalg.norm(list(track.direction.values()))
-                data["persons"].append(person)
+                    # add confirmed persons to data
+                    data["person_current_count"] += 1
+                    person = {}
+                    person["id"] = track.id
+                    person["color"] = self.list_of_colors[track.id]
+                    person["best_bodies"] = track.good_bodies.popleft() if len(track.good_bodies) else []
+                    person["best_faces"] = []
+                    person["isFallen"] = track.isFallen
+                    person["isWalking"] = track.isWalking
+                    person["joints"] = []
+                    person["location"] = track.location
+                    person["direction"] = track.direction
+                    person["height"] = track.height
+                    person["warning"] = self.warning_check(track.location)
+                    person["movement_index"] = np.linalg.norm(list(track.direction.values()))
+                    data["persons"].append(person)
 
-            data["heatmap"]["points"] = heatmap_points
+                data["heatmap"]["points"] = heatmap_points
 
-            # total congestion map update
-            self.congestion_map[self.congestion_map < 1] = 0.0
-            self.total_congestion_map = self.congestion_map + self.total_congestion_map \
-                    - 5 * np.array(self.congestion_map == 0) * np.array(self.total_congestion_map >= 5)
+                # total congestion map update
+                self.congestion_map[self.congestion_map < 1] = 0.0
+                self.total_congestion_map = self.congestion_map + self.total_congestion_map \
+                        - 5 * np.array(self.congestion_map == 0) * np.array(self.total_congestion_map >= 5)
 
-            # find congestion locations
-            cong_locs = np.where(self.total_congestion_map > 25)
+                # find congestion locations
+                cong_locs = np.where(self.total_congestion_map > 25)
 
-            # add congestions
-            for idx in range(len(cong_locs[0])):
-                x = float(cong_locs[0][idx]) * 0.5 + 0.25
-                z = float(cong_locs[1][idx]) * 0.5 + 0.25
-                congestion = {"x": x, "z": z}
-                data["congestions"].append(congestion)
+                # add congestions
+                for idx in range(len(cong_locs[0])):
+                    x = float(cong_locs[0][idx]) * 0.5 + 0.25
+                    z = float(cong_locs[1][idx]) * 0.5 + 0.25
+                    congestion = {"x": x, "z": z}
+                    data["congestions"].append(congestion)
 
-            if self.kafka_produce:
-                self.producer.produce(self.topic, json.dumps(data), "data", callback=self.delivery_callback)
+                if self.kafka_produce:
+                    self.producer.produce(self.topic, json.dumps(data), "data", callback=self.delivery_callback)
 
-            exec_time = time() - frame_time
-            sleep_time = 1 / self.fps - exec_time - extra_time
-            extra_time = abs(min(0, sleep_time))
-            sleep(max(0, sleep_time))
-            print(f"Execution FPS: {round(1 / (time() - frame_time))}")
+                exec_time = time() - frame_time
+                sleep_time = 1 / self.fps - exec_time - extra_time
+                extra_time = abs(min(0, sleep_time))
+                sleep(max(0, sleep_time))
+                print(f"Execution FPS: {round(1 / (time() - frame_time))}")
 
-        if self.save:
-            with open("results/data.json", "w") as f:
-                json.dump(data, f)
+            except Exception as e:
+                logging.error("Exception occurred", exc_info=True)
 
-        # Block until the messages are sent.
-        if self.kafka_produce:
-            self.producer.poll(10000)
-            self.producer.flush()
+        # if self.save:
+        #     with open("results/data.json", "w") as f:
+        #         json.dump(data, f)
 
-        # Release cameras
-        for stream in self.streams:
-            stream.release()
+        # # Block until the messages are sent.
+        # if self.kafka_produce:
+        #     self.producer.poll(10000)
+        #     self.producer.flush()
+
+        # # Release cameras
+        # for stream in self.streams:
+        #     stream.release()
 
     def warning_check(self, location):
         '''
