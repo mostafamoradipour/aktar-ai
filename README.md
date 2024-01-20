@@ -30,3 +30,6 @@ pip install pycairo PyGObject
 source menv/bin/activate
 python setup.py bdist_wheel
 ```
+
+# to get the log of broker
+docker compose logs -f broker
