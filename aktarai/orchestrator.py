@@ -65,9 +65,14 @@ class Orchestrator(object):
         '''
             processing and orchestration of camera frames.
         '''
+
+        if self.kafka_produce:
+            kafka_pull_flush_time = time()
+
         # start streams
         for stream in self.streams:
             stream.thread.start()
+
         extra_time = 0
 
         # loop over frames
@@ -154,6 +159,12 @@ class Orchestrator(object):
                 extra_time = abs(min(0, sleep_time))
                 sleep(max(0, sleep_time))
                 print(f"Execution FPS: {round(1 / (time() - frame_time))}")
+
+                # Block until the messages are sent.
+                if self.kafka_produce and (time() - kafka_pull_flush_time) > 10:
+                    kafka_pull_flush_time = time()
+                    self.producer.poll(1000)
+                    self.producer.flush()
 
             except Exception as e:
                 logging.error("Exception occurred", exc_info=True)
