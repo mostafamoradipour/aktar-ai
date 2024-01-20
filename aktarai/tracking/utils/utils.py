@@ -212,7 +212,7 @@ def simplify_pose(pose, conf):
 
 
 def get_posture(simplified_pose):
-    neck, hip, ankle = simplified_pose
+    _, hip, ankle = simplified_pose
     posture = None
     if hip and ankle:
         hip_ankle_slope = abs((ankle[1] - hip[1]) / (ankle[0] - hip[0] + 1e-9))
