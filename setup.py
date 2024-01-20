@@ -1,6 +1,7 @@
 from os.path import join, dirname, abspath
 from setuptools import setup, Extension
 from Cython.Build import cythonize
+from aktarai import __version__
 
 
 directory_path = dirname(abspath(__file__))
@@ -52,6 +53,6 @@ for name, data in ext_data.items():
 # Use cythonize on the extension object.
 setup(
     name='aktarai',
-    version='0.2.2',
+    version=__version__,
     author='Mostafa Moradipour',
     ext_modules=cythonize(extensions))
