@@ -23,3 +23,6 @@
 ### Added
 - try except to the main loop of orchestrator
 - logging
+## 0.2.3
+### Added
+- be sure to empty the python queue for kafka topic
