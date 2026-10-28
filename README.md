@@ -32,7 +32,7 @@ For native dependencies such as PyGObject, install the appropriate system packag
 
 Edit `config.yaml` before running the application. The entry point selects the profile named by the top-level `user` value, then passes that profile's `ai` configuration to the orchestrator.
 
-Configure stream URLs, model weight paths, calibration files, Kafka broker/topic, and tracking settings for your environment. The committed example configuration contains deployment-specific paths and stream addresses; replace them with values you are authorized to use. Do not commit credentials or private endpoints.
+Configure stream URLs, model weight paths, calibration files, Kafka broker/topic, and tracking settings for your environment. The tracked `config.yaml` is a sanitized example profile. Replace its stream, model, calibration, and broker placeholders with values for your own environment before running. Keep credentials and private endpoints out of commits; the example keeps Kafka output disabled.
 
 ## Run
 
