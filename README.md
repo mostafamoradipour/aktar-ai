@@ -1,5 +1,7 @@
 # Aktar AI
 
+![multi-camera video analytics workflow](docs/workflow.svg)
+
 Aktar AI is a Python orchestration package for multi-camera video analytics. Its modules coordinate video streaming, object detection, recognition, tracking, optional camera-to-world mapping, and Kafka output.
 
 ## Features
